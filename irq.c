@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <conio.h>
 #include <port.h>
 #include <string.h>
 extern void irq0();
@@ -97,6 +97,7 @@ struct regs
 void irq_handler(struct regs *r)
 {
      if(r->int_no < 32) {
+	puts(exception_messages[r->int_no]);
 //	printf("%s\nException. System Halted!\n",exception_messages[r->int_no]);
      	for(;;);
      } else {
@@ -127,8 +128,16 @@ void idt_set_gate(unsigned int num, void func(), unsigned short sel, unsigned ch
 
 void idt_load();
 
+static inline void io_wait(void)
+{
+    asm volatile ( "jmp 1f\n\t"
+                   "1:jmp 2f\n\t"
+                   "2:" );
+}
+
 void set_irqs()
 {
+memset(idt, 0, 2048);
 idt_set_gate(0, irq0, 0x08, 0x8E);
 idt_set_gate(1, irq1, 0x08, 0x8E);
 idt_set_gate(2, irq2, 0x08, 0x8E);
@@ -179,13 +188,24 @@ idt_set_gate(46, irq46, 0x08, 0x8E);
 idt_set_gate(47, irq47, 0x08, 0x8E);
 idt_load();
 outportb(0x20,0x11);
+io_wait();
 outportb(0xA0,0x11);
+io_wait();
 outportb(0x21,0x20);
+io_wait();
 outportb(0xA1,0x28);
+io_wait();
 outportb(0x21,0x04);
+io_wait();
 outportb(0xA1,0x02);
+io_wait();
 outportb(0x21,0x01);
+io_wait();
 outportb(0xA1,0x01);
-outportb(0x21,0x00);
-outportb(0xA1,0x00);
+io_wait();
+// mask out all interrupts
+outportb(0x21,0xff);
+io_wait();
+outportb(0xA1,0xff);
+io_wait();
 }

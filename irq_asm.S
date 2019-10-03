@@ -65,11 +65,11 @@ INTERRUPT 46
 INTERRUPT 47
 
 	.global idt
-	.comm idt, 384
+	.comm idt, 2048
 
 	.global idt_ptr
 idt_ptr:
-	.short 383
+	.short 2047
 	.long  idt
 
 	.extern irq_handler
@@ -98,9 +98,16 @@ irq_stub:
 	add $8, %esp
 	iret
 
+	.globl disable, enable
+disable:
+	cli
+	ret
+
+enable:
+	sti
+	ret
+	
 	.globl idt_load
 idt_load:
-	cli
 	lidt idt_ptr
-	sti
 	ret
