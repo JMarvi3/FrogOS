@@ -1,7 +1,7 @@
-CFLAGS=-Iinclude -nostdinc -fno-builtin
-kernel: cmain.o boot.o lib/libc.a
-	ld -T ld.script -o kernel -Llib boot.o cmain.o -l:libc.a  -L/usr/lib/gcc/i586-linux-gnu/4.9 -lgcc
-	cp kernel /srv/tftp/xinu.boot
+CFLAGS=-Iinclude -nostdinc -fno-builtin -fno-stack-protector
+kernel: cmain.o boot.o lib/libc.a irq_asm.o irq.o gdt.o
+	ld -T ld.script -o kernel -Llib *.o -l:libc.a  -L/usr/lib/gcc/i686-linux-gnu/5 -lgcc
+	cp kernel /var/lib/tftpboot/kernel.boot
 lib/libc.a: lib/*.c
 	$(MAKE) -C lib
 boot.o: boot.S
