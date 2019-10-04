@@ -63,6 +63,7 @@ INTERRUPT 44
 INTERRUPT 45
 INTERRUPT 46
 INTERRUPT 47
+INTERRUPT 48
 
 	.global idt
 	.comm idt, 2048
@@ -87,7 +88,7 @@ irq_stub:
 	mov %eax, %gs
 	mov %esp, %eax
 	push %eax
-	mov irq_handler, %eax
+	mov $irq_handler, %eax
 	call *%eax
 	pop %eax
 	pop %gs

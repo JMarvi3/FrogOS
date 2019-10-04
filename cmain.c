@@ -4,6 +4,7 @@
 #include <port.h>
 #include <stdint.h>
 #include <system.h>
+#include <unistd.h>
 
 extern void gdt_flush();
 extern void set_irqs();
@@ -14,26 +15,52 @@ void reboot()
 	outportb(0x64, 0xfe);
 }
 
+void irq48_handler(struct regs *r)
+{
+	printf("SYSCALL: %x%x\n",r->ebx,r->eax);
+}
+
+extern void set_pit();
+extern unsigned long long pit_counter;
+extern void print_info(unsigned long addr);
+
 void cmain(unsigned long magic, unsigned long addr)
 {
-	if(magic!=MULTIBOOT_BOOTLOADER_MAGIC) return;
 	disable();
+	if(magic!=MULTIBOOT_BOOTLOADER_MAGIC) return;
 	cls();
 	gdt_flush();
 	set_irqs();
 	enable();
-	printf("Done.\n");
-	int a=1/0;
-	//__asm__("int $0x00");
+	set_pit();
+	install_irq_handler(48-32, irq48_handler);
+	print_info(addr);
+	puts("Done.\n");
 	for(;;) {
-		while(inportb(0x64)&1==0);
+		__asm__ __volatile__ ("hlt");
+//		usleep(1000);
+//		putch('.');
 		while(inportb(0x64)&1==1) {
 			unsigned char c=inportb(0x60);
-			if(c==0x93) {
+			if(c==0x93) { // r
 				reboot();
-			} else if(c==0xa3) {
-				printf("Halting.");
+			} else if(c==0xa3) { // h
+				printf("Halting:");
 				return;
+			} else if(c==0xac) { // z
+				printf("Dividing by zero:");
+				int a=1/0;
+			} else if(c==0x94) { // t
+				unsigned long long counter=pit_counter;
+				printf("%lld\n",counter);
+			} else if(c==0x9f) { // s
+				__asm__("pushl %ebx; \
+					pushl %eax; \
+					mov $0xBEEF, %eax; \
+					mov $0xDEAD, %ebx; \
+					int $48; \
+					popl %eax; \
+					popl %ebx");
 			} else {
 				printf("0x%x ",(int)c);
 			}

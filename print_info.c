@@ -1,11 +1,16 @@
+#include <multiboot.h>
 #include <stdio.h>
-extern int _start;
-extern int _end;
+extern int text, etext, data, edata, bss, ebss, end;
+extern int gdt_ptr, end_gdt;
 extern int stack;
 void print_info(unsigned long addr)
 {
-	printf("0x%p - 0x%p\n",&_start,&_end);
-        printf("stack: 0x%p  multiboot_info: 0x%lx\n",&stack,addr);
+	printf("text: 0x%p - 0x%p\n",&text,&etext);
+	printf("data: 0x%p - 0x%p\n",&data,&edata);
+	printf(" bss: 0x%p - 0x%p\n",&bss,&ebss);
+        printf("stack: 0x%p  0x%p\n",&stack, &end);
+	printf(" gdt: 0x%p - 0x%p\n",&gdt_ptr, &end_gdt);
+	printf(" multiboot_info: 0x%lx\n",addr);
         unsigned short *ebda=(unsigned short *)0x40E;
         printf("EBDA: 0x%x\n",(*ebda)<<4);
         // http://stanislavs.org/helppc/bios_data_area.html

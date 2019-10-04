@@ -5,30 +5,38 @@ SECTIONS
 {
   . = physbase;                 /* Image starts here                    */
   . = ALIGN(4096);              /* Accommodate bad physbase             */
-  .text : {
+  .text :
+  {
     text = ABSOLUTE(.);         /* text: beginning of text segment      */
     *(.text .text.*)            /* asm text, then C text                */
-    *(.rodata .rodata.*)        /* asm and C read-only data             */
+    . = ALIGN(4096);
     etext = ABSOLUTE(.) ;       /* etext: end of text                   */
+  }
+  .rodata :
+  {
+    *(.rodata .rodata.*)        /* asm and C read-only data             */
+    *(.eh_frame);
     . = ALIGN(4096);
   }
   .data :
   {
     data = ABSOLUTE(.);         /* data: beginning of data segment      */
     *(.data .data.*)                                                    
+    *(.eh_frame .eh_frame.*)
+    . = ALIGN(4096);                                                    
     edata = ABSOLUTE(.) ;       /* edata: end of data                   */
     _edata = ABSOLUTE(.) ;	/* _edata: end of data section		*/
-    . = ALIGN(4096);                                                    
   }                                                                     
   .bss :                                                                
   {                                                                     
     bss = ABSOLUTE(.);          /* bss: beginning of bss segment        */
+    stack = ABSOLUTE(.);
+    . += 0x10000;
     *(.bss .bss.*)
     *(COMMON)                   /* extra sections that are common       */
+    . = ALIGN(4096);
     ebss = ABSOLUTE(.) ;        /* ebss: end of bss                     */
-    . = ALIGN(4096); */
     end = ABSOLUTE(.);          /* end: end of image                    */
     _end = ABSOLUTE(.);         /* _end: end of image                   */
-    . = ALIGN(4096);
   }
 }

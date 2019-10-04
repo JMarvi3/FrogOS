@@ -1,6 +1,8 @@
 #include <conio.h>
 #include <port.h>
 #include <string.h>
+#include <system.h>
+
 extern void irq0();
 extern void irq1();
 extern void irq2();
@@ -49,6 +51,7 @@ extern void irq44();
 extern void irq45();
 extern void irq46();
 extern void irq47();
+extern void irq48();
 
 unsigned char *exception_messages[] = 
 {
@@ -85,22 +88,31 @@ unsigned char *exception_messages[] =
 	"Reserved",
 	"Reserved"
 };
-/* This defines what the stack looks like after an ISR was running */
-struct regs
+
+void *irq_handlers[] = 
 {
-    unsigned int gs, fs, es, ds;      /* pushed the segs last */
-    unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax;  /* pushed by 'pusha' */
-    unsigned int int_no, err_code;    /* our 'push byte #' and ecodes do this */
-    unsigned int eip, cs, eflags, useresp, ss;   /* pushed by the processor automatically */ 
+  0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0
 };
+
+void install_irq_handler(int irq, void (*handler)(struct regs *r))
+{
+	irq_handlers[irq] = handler;
+}
+void uninstall_irq_handler(int irq)
+{
+	irq_handlers[irq] = 0;
+}
 
 void irq_handler(struct regs *r)
 {
      if(r->int_no < 32) {
 	puts(exception_messages[r->int_no]);
 //	printf("%s\nException. System Halted!\n",exception_messages[r->int_no]);
-     	for(;;);
+     	for(;;) __asm__("hlt");
      } else {
+	void (*handler)(struct regs *r)=irq_handlers[r->int_no-32];
+	if(handler) handler(r);
 	if(r->int_no >= 40)
         	outportb(0xA0,0x20);
 	outportb(0x20,0x20);
@@ -186,6 +198,7 @@ idt_set_gate(44, irq44, 0x08, 0x8E);
 idt_set_gate(45, irq45, 0x08, 0x8E);
 idt_set_gate(46, irq46, 0x08, 0x8E);
 idt_set_gate(47, irq47, 0x08, 0x8E);
+idt_set_gate(48, irq48, 0x08, 0x8E);
 idt_load();
 outportb(0x20,0x11);
 io_wait();
