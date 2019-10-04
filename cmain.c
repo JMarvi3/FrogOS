@@ -22,19 +22,18 @@ void irq48_handler(struct regs *r)
 
 extern void set_pit();
 extern unsigned long long pit_counter;
-extern void print_info(unsigned long addr);
+extern void print_info();
 
-void cmain(unsigned long magic, unsigned long addr)
+void cmain()
 {
 	disable();
-	if(magic!=MULTIBOOT_BOOTLOADER_MAGIC) return;
 	cls();
 	gdt_flush();
 	set_irqs();
 	enable();
 	set_pit();
 	install_irq_handler(48-32, irq48_handler);
-	print_info(addr);
+	print_info();
 	puts("Done.\n");
 	for(;;) {
 		__asm__ __volatile__ ("hlt");

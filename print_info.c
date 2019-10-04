@@ -3,8 +3,10 @@
 extern int text, etext, data, edata, bss, ebss, end;
 extern int gdt_ptr, end_gdt;
 extern int stack;
-void print_info(unsigned long addr)
+extern unsigned long multiboot_info;
+void print_info()
 {
+	unsigned long addr=multiboot_info;
 	printf("text: 0x%p - 0x%p\n",&text,&etext);
 	printf("data: 0x%p - 0x%p\n",&data,&edata);
 	printf(" bss: 0x%p - 0x%p\n",&bss,&ebss);
