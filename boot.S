@@ -22,11 +22,10 @@
 
 #define MULTIBOOT_HEADER_FLAGS MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
         
-        .text
+        .section .start
 
-        .globl  start, _start
+        .globl  start
 start:
-_start:
         jmp     multiboot_entry
 
         /* Align 32 bits boundary. */
@@ -47,15 +46,54 @@ multiboot_info:
 
 multiboot_entry:
         /* Initialize the stack pointer. */
-        movl    $(temp_stack + STACK_SIZE), %esp
+        /*movl    $(temp_stack + STACK_SIZE), %esp */
+
+	movl	%ebx, multiboot_info
+	cmpl	$MULTIBOOT_BOOTLOADER_MAGIC, %eax
+	jne	exit
+
+	.set offset, 0xE0000000
+	movl $(page_table0 - offset + 0x3), page_directory - offset
+	movl $(page_table0 - offset + 0x3), page_directory - offset + 0x380*4
+	movl $(page_table1 - offset + 0x3), page_directory - offset + 0x3ff*4
+	
+	movl	$0x0F690F48, 0xB8000
+
+	movl	$(page_table0 - offset), %edi
+	movl	$1024, %ecx
+	movl	$3, %esi
+1:	movl	%esi, %edx
+	movl	%edx, (%edi)
+	addl	$4096, %esi
+	addl	$4, %edi
+	dec	%ecx
+	jnz	1b
+
+
+	movl	$(page_table0 - offset + 0x3), page_table1 - offset
+	movl	$(page_table1 - offset + 0x3), page_table1 - offset + 4
+	movl	$(page_directory - offset + 0x3), page_table1 - offset + 0x3ff*4
+	
+	movl	$(page_directory - offset + 0x3), %ecx
+	movl	%ecx, %cr3	
+
+	movl	%cr0, %ecx
+	orl	$0x80010000, %ecx
+	movl	%ecx, %cr0
+
+	lea	2f, %ecx
+	jmp 	*%ecx
+2:
+	movl 	$0, page_directory
+	movl	%cr3, %ecx
+	movl	%ecx, %cr3
+	
+	movl	$(stack + 0x10000), %esp
 
         /* Reset EFLAGS. */
         pushl   $0
         popf
 
-	movl	%ebx, multiboot_info
-	cmpl	$MULTIBOOT_BOOTLOADER_MAGIC, %eax
-	jne	exit
 
         /* Now enter the C main function... */
         call    cmain
@@ -65,4 +103,19 @@ exit:
 loop:   hlt
         jmp     loop
 
-	.comm  temp_stack, STACK_SIZE
+temp_stack:
+	.zero STACK_SIZE
+
+
+	.bss
+	.globl page_directory
+	.align 4096
+page_directory:
+	.zero 0x1000
+page_table0:
+	.zero 0x1000
+page_table1:
+	.zero 0x1000
+stack:
+	.zero 0x10000
+

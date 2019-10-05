@@ -1,7 +1,7 @@
 #include <string.h>
 #include <port.h>
 
-volatile  short *video = (volatile short*)0xB8000;
+volatile  short *video = (volatile short*)0xE00B8000;
 int csr_x=0, csr_y=0, attrib=0xf;
 
 void move_csr()

@@ -1,16 +1,10 @@
 #include <multiboot.h>
 #include <stdio.h>
-extern int text, etext, data, edata, bss, ebss, end;
 extern int gdt_ptr, end_gdt;
-extern int stack;
 extern unsigned long multiboot_info;
 void print_info()
 {
 	unsigned long addr=multiboot_info;
-	printf("text: 0x%p - 0x%p\n",&text,&etext);
-	printf("data: 0x%p - 0x%p\n",&data,&edata);
-	printf(" bss: 0x%p - 0x%p\n",&bss,&ebss);
-        printf("stack: 0x%p  0x%p\n",&stack, &end);
 	printf(" gdt: 0x%p - 0x%p\n",&gdt_ptr, &end_gdt);
 	printf(" multiboot_info: 0x%lx\n",addr);
         unsigned short *ebda=(unsigned short *)0x40E;

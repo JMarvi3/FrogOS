@@ -33,7 +33,7 @@ void cmain()
 	enable();
 	set_pit();
 	install_irq_handler(48-32, irq48_handler);
-	print_info();
+//	print_info();
 	puts("Done.\n");
 	for(;;) {
 		__asm__ __volatile__ ("hlt");
