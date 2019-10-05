@@ -44,22 +44,25 @@ void cmain()
 	for(;;) {
 		while(!kbd_isempty()) {
 			unsigned int c=kbd_dequeue();
-			switch(c) {
-				case 0x93:
-					reboot();
+			switch(c&0x7f) {
+				case KEY_PAUSE:
+					puts("Pause\n");
 					break;
-				case 0xa3:
+				case KEY_PRTSC:
+					puts("Print Screen\n");
+					break;
+				case 'h':
 					puts("Halting:");
 					return;
 					break;
-				case 0xac:
+				case 'z':
 					puts("Divide by zero:");
 					int a=1/0;
 					break;
-				case 0x94:
+				case 't':
 					printf("%lld\n",pit_counter);
 					break;
-				case 0x9f:
+				case 's':
 					__asm__("pushl %ebx; \
 					pushl %eax; \
 					mov $0xBEEF, %eax; \
@@ -67,6 +70,12 @@ void cmain()
 					int $48; \
 					popl %eax; \
 					popl %ebx");
+					break;
+				case 'r':
+					reboot();
+					break;
+				default:
+					if (!(c&0x80)) putch(c&0xff);
 					break;
 			}	
 		}
