@@ -5,4 +5,7 @@ void cls();
 void putch(unsigned char c);
 void puts(unsigned char *s);
 
+int kbd_isempty();
+unsigned int kbd_dequeue();
+
 #endif

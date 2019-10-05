@@ -148,13 +148,6 @@ void idt_set_gate(unsigned int num, void func(), unsigned short sel, unsigned ch
 
 void idt_load();
 
-static inline void io_wait(void)
-{
-    asm volatile ( "jmp 1f\n\t"
-                   "1:jmp 2f\n\t"
-                   "2:" );
-}
-
 void set_irqs()
 {
 memset(idt, 0, 2048);

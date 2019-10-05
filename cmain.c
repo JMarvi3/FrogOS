@@ -33,6 +33,7 @@ void cmain()
 	enable();
 	set_pit();
 	install_irq_handler(48-32, irq48_handler);
+	init_kbd();
 //	print_info();
 	printf("%p\n",get_physaddr((void *)0xE00B8000));
 	printf("%p\n",get_physaddr((void *)(~0xFFF)));
@@ -41,33 +42,34 @@ void cmain()
 	printf("%p\n",get_physaddr((void *)(0xB8000)));
 	puts("Done.\n");
 	for(;;) {
-		__asm__ __volatile__ ("hlt");
-//		usleep(1000);
-//		putch('.');
-		while(inportb(0x64)&1==1) {
-			unsigned char c=inportb(0x60);
-			if(c==0x93) { // r
-				reboot();
-			} else if(c==0xa3) { // h
-				printf("Halting:");
-				return;
-			} else if(c==0xac) { // z
-				printf("Dividing by zero:");
-				int a=1/0;
-			} else if(c==0x94) { // t
-				unsigned long long counter=pit_counter;
-				printf("%lld\n",counter);
-			} else if(c==0x9f) { // s
-				__asm__("pushl %ebx; \
+		while(!kbd_isempty()) {
+			unsigned int c=kbd_dequeue();
+			switch(c) {
+				case 0x93:
+					reboot();
+					break;
+				case 0xa3:
+					puts("Halting:");
+					return;
+					break;
+				case 0xac:
+					puts("Divide by zero:");
+					int a=1/0;
+					break;
+				case 0x94:
+					printf("%lld\n",pit_counter);
+					break;
+				case 0x9f:
+					__asm__("pushl %ebx; \
 					pushl %eax; \
 					mov $0xBEEF, %eax; \
 					mov $0xDEAD, %ebx; \
 					int $48; \
 					popl %eax; \
 					popl %ebx");
-			} else {
-				printf("0x%x ",(int)c);
-			}
+					break;
+			}	
 		}
+		__asm__ __volatile__ ("hlt");
 	}
 }
