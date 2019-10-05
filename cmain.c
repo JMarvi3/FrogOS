@@ -34,6 +34,11 @@ void cmain()
 	set_pit();
 	install_irq_handler(48-32, irq48_handler);
 //	print_info();
+	printf("%p\n",get_physaddr((void *)0xE00B8000));
+	printf("%p\n",get_physaddr((void *)(~0xFFF)));
+	printf("%p\n",get_physaddr((void *)(0xFFC00000)));
+	printf("%p\n",get_physaddr((void *)(0xFFF80000)));
+	printf("%p\n",get_physaddr((void *)(0xB8000)));
 	puts("Done.\n");
 	for(;;) {
 		__asm__ __volatile__ ("hlt");

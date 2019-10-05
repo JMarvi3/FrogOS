@@ -57,8 +57,6 @@ multiboot_entry:
 	movl $(page_table0 - offset + 0x3), page_directory - offset + 0x380*4
 	movl $(page_table1 - offset + 0x3), page_directory - offset + 0x3ff*4
 	
-	movl	$0x0F690F48, 0xB8000
-
 	movl	$(page_table0 - offset), %edi
 	movl	$1024, %ecx
 	movl	$3, %esi
@@ -71,22 +69,25 @@ multiboot_entry:
 
 
 	movl	$(page_table0 - offset + 0x3), page_table1 - offset
-	movl	$(page_table1 - offset + 0x3), page_table1 - offset + 4
+	movl	$(page_table0 - offset + 0x3), page_table1 - offset + 0x380*4
 	movl	$(page_directory - offset + 0x3), page_table1 - offset + 0x3ff*4
 	
 	movl	$(page_directory - offset + 0x3), %ecx
 	movl	%ecx, %cr3	
 
 	movl	%cr0, %ecx
-	orl	$0x80010000, %ecx
+	orl	$0x80000000, %ecx
 	movl	%ecx, %cr0
 
 	lea	2f, %ecx
 	jmp 	*%ecx
+
 2:
 	movl 	$0, page_directory
-	movl	%cr3, %ecx
-	movl	%ecx, %cr3
+	movl	$0, page_table1
+	invlpg  0x0
+	/* movl	%cr3, %ecx
+	movl	%ecx, %cr3 */
 	
 	movl	$(stack + 0x10000), %esp
 
@@ -94,8 +95,6 @@ multiboot_entry:
         pushl   $0
         popf
 
-
-        /* Now enter the C main function... */
         call    cmain
 
 exit:
@@ -108,7 +107,7 @@ temp_stack:
 
 
 	.bss
-	.globl page_directory
+	.globl page_directory, page_table0, page_table1
 	.align 4096
 page_directory:
 	.zero 0x1000

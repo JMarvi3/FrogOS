@@ -14,4 +14,5 @@ struct regs
 
 void install_irq_handler(int irq, void (*handler)(struct regs *r));
 void uninstall_irq_handler(int irq);
+void *get_physaddr(void *vaddr);
 #endif

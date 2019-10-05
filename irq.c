@@ -2,6 +2,7 @@
 #include <port.h>
 #include <string.h>
 #include <system.h>
+#include <stdio.h>
 
 extern void irq0();
 extern void irq1();
@@ -106,7 +107,14 @@ void uninstall_irq_handler(int irq)
 
 void irq_handler(struct regs *r)
 {
-     if(r->int_no < 32) {
+     if(r->int_no == 14) {
+	puts(exception_messages[r->int_no]);
+	unsigned long cr2;
+	__asm__ __volatile__ ("mov %%cr2, %0":"=r"(cr2));
+	printf(" error: %d, addr: 0x%x, eip: 0x%x\n",r->err_code,cr2,r->eip);
+        printf("eax: 0x%x\n",r->eax);
+     	for(;;) __asm__("hlt");
+     } else if(r->int_no < 32) {
 	puts(exception_messages[r->int_no]);
 //	printf("%s\nException. System Halted!\n",exception_messages[r->int_no]);
      	for(;;) __asm__("hlt");
