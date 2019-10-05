@@ -11,7 +11,7 @@ SECTIONS
 	}
 	.rodata ALIGN(4K) : AT (ADDR(.rodata) - 0xE0000000)
 	{
-		*(.rodata)
+		*(.rodata.*)
 		*(.eh_frame)
 	}
 	.data ALIGN(4K) : AT (ADDR(.data) - 0xE0000000)

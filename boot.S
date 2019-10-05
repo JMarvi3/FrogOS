@@ -48,7 +48,7 @@ multiboot_entry:
         /* Initialize the stack pointer. */
         /*movl    $(temp_stack + STACK_SIZE), %esp */
 
-	movl	%ebx, multiboot_info
+	movl	%ebx, multiboot_info - offset
 	cmpl	$MULTIBOOT_BOOTLOADER_MAGIC, %eax
 	jne	exit
 
@@ -83,12 +83,15 @@ multiboot_entry:
 	jmp 	*%ecx
 
 2:
+
+/*
 	movl 	$0, page_directory
 	movl	$0, page_table1
 	invlpg  0x0
+*/
 	/* movl	%cr3, %ecx
 	movl	%ecx, %cr3 */
-	
+
 	movl	$(stack + 0x10000), %esp
 
         /* Reset EFLAGS. */

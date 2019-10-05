@@ -34,7 +34,7 @@ void cmain()
 	set_pit();
 	install_irq_handler(48-32, irq48_handler);
 	init_kbd();
-//	print_info();
+	print_info();
 	printf("%p\n",get_physaddr((void *)0xE00B8000));
 	printf("%p\n",get_physaddr((void *)(~0xFFF)));
 	printf("%p\n",get_physaddr((void *)(0xFFC00000)));
