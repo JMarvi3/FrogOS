@@ -16,7 +16,7 @@
  */
 
 #define ASM_FILE        1
-#include <multiboot.h>
+#include <multiboot2.h>
 
 #define STACK_SIZE                      0x0200
 
@@ -29,28 +29,32 @@ start:
         jmp     multiboot_entry
 
         /* Align 32 bits boundary. */
-        .align  4
+        .align  8
         
         /* Multiboot header. */
 multiboot_header:
         /* magic */
-        .long   MULTIBOOT_HEADER_MAGIC
-        /* flags */
-        .long   MULTIBOOT_HEADER_FLAGS
+        .long   MULTIBOOT2_HEADER_MAGIC
+	.long   MULTIBOOT_ARCHITECTURE_I386
+	.long	multiboot_header_end - multiboot_header
         /* checksum */
-        .long   -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
+        .long   -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_ARCHITECTURE_I386 + (multiboot_header_end - multiboot_header))
+	.short MULTIBOOT_HEADER_TAG_END
+	.short 0
+	.long  8
+multiboot_header_end:
 
-	.globl multiboot_info
-multiboot_info:
-	.long 0
 
 multiboot_entry:
         /* Initialize the stack pointer. */
         /*movl    $(temp_stack + STACK_SIZE), %esp */
 
-	movl	%ebx, multiboot_info - offset
-	cmpl	$MULTIBOOT_BOOTLOADER_MAGIC, %eax
+	cmpl	$MULTIBOOT2_BOOTLOADER_MAGIC, %eax
 	jne	exit
+	movl	%ebx, %esi
+	movl	$(multiboot_info-offset), %edi
+	movl	(%ebx), %ecx
+	rep movsb
 
 	.set offset, 0xE0000000
 	movl $(page_table0 - offset + 0x3), page_directory - offset
@@ -84,11 +88,10 @@ multiboot_entry:
 
 2:
 
-/*
 	movl 	$0, page_directory
 	movl	$0, page_table1
 	invlpg  0x0
-*/
+
 	/* movl	%cr3, %ecx
 	movl	%ecx, %cr3 */
 
@@ -109,9 +112,13 @@ temp_stack:
 	.zero STACK_SIZE
 
 
+
 	.bss
 	.globl page_directory, page_table0, page_table1
 	.align 4096
+	.globl multiboot_info
+multiboot_info:
+	.zero 0x1000
 page_directory:
 	.zero 0x1000
 page_table0:

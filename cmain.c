@@ -1,4 +1,3 @@
-#include <multiboot.h>
 #include <stdio.h>
 #include <conio.h>
 #include <port.h>
@@ -35,11 +34,13 @@ void cmain()
 	install_irq_handler(48-32, irq48_handler);
 	init_kbd();
 	print_info();
+/*
 	printf("%p\n",get_physaddr((void *)0xE00B8000));
 	printf("%p\n",get_physaddr((void *)(~0xFFF)));
 	printf("%p\n",get_physaddr((void *)(0xFFC00000)));
 	printf("%p\n",get_physaddr((void *)(0xFFF80000)));
 	printf("%p\n",get_physaddr((void *)(0xB8000)));
+*/
 	puts("Done.\n");
 	for(;;) {
 		while(!kbd_isempty()) {
