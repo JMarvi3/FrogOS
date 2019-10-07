@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <system.h>
 #include <unistd.h>
+#include <memory.h>
 
 extern void gdt_flush();
 extern void set_irqs();
@@ -22,6 +23,7 @@ void irq48_handler(struct regs *r)
 extern void set_pit();
 extern unsigned long long pit_counter;
 extern void print_info();
+extern void pci_init();
 
 void cmain()
 {
@@ -31,9 +33,11 @@ void cmain()
 	set_irqs();
 	enable();
 	set_pit();
+	init_mem();
 	install_irq_handler(48-32, irq48_handler);
 	init_kbd();
-	print_info();
+//	pci_init();
+//	print_info();
 /*
 	printf("%p\n",get_physaddr((void *)0xE00B8000));
 	printf("%p\n",get_physaddr((void *)(~0xFFF)));
@@ -46,6 +50,9 @@ void cmain()
 		while(!kbd_isempty()) {
 			unsigned int c=kbd_dequeue();
 			switch(c&0x7f) {
+				case 'r':
+					reboot();
+					break;
 				case KEY_PAUSE:
 					puts("Pause\n");
 					break;
@@ -72,8 +79,11 @@ void cmain()
 					popl %eax; \
 					popl %ebx");
 					break;
-				case 'r':
-					reboot();
+				case 'i':
+					pci_init();
+					break;
+				case 'p':
+					print_info();
 					break;
 				default:
 					if (!(c&0x80)) putch(c&0xff);

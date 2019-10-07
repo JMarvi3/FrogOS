@@ -22,6 +22,7 @@
 
 #define MULTIBOOT_HEADER_FLAGS MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
         
+	.set offset, 0xC0000000
         .section .start
 
         .globl  start
@@ -56,13 +57,14 @@ multiboot_entry:
 	movl	(%ebx), %ecx
 	rep movsb
 
-	.set offset, 0xE0000000
 	movl $(page_table0 - offset + 0x3), page_directory - offset
-	movl $(page_table0 - offset + 0x3), page_directory - offset + 0x380*4
-	movl $(page_table1 - offset + 0x3), page_directory - offset + 0x3ff*4
+	movl $(page_table0 - offset + 0x3), page_directory - offset + 0x300*4
+	movl $(page_table1 - offset + 0x3), page_directory - offset + 0x301*4
+	movl $(page_table2 - offset + 0x3), page_directory - offset + 0x302*4
+	movl $(page_table_high - offset + 0x3), page_directory - offset + 0x3ff*4
 	
 	movl	$(page_table0 - offset), %edi
-	movl	$1024, %ecx
+	movl	$1024*3, %ecx
 	movl	$3, %esi
 1:	movl	%esi, %edx
 	movl	%edx, (%edi)
@@ -72,10 +74,13 @@ multiboot_entry:
 	jnz	1b
 
 
-	movl	$(page_table0 - offset + 0x3), page_table1 - offset
-	movl	$(page_table0 - offset + 0x3), page_table1 - offset + 0x380*4
-	movl	$(page_directory - offset + 0x3), page_table1 - offset + 0x3ff*4
+	movl	$(page_table0 - offset + 0x3), page_table_high - offset
+	movl	$(page_table0 - offset + 0x3), page_table_high - offset + 0x300*4
+	movl	$(page_table1 - offset + 0x3), page_table_high - offset + 0x301*4
+	movl	$(page_table2 - offset + 0x3), page_table_high - offset + 0x302*4
+	movl	$(page_directory - offset + 0x3), page_table_high - offset + 0x3ff*4
 	
+
 	movl	$(page_directory - offset + 0x3), %ecx
 	movl	%ecx, %cr3	
 
@@ -88,9 +93,11 @@ multiboot_entry:
 
 2:
 
+/*
 	movl 	$0, page_directory
 	movl	$0, page_table1
 	invlpg  0x0
+*/
 
 	/* movl	%cr3, %ecx
 	movl	%ecx, %cr3 */
@@ -114,17 +121,22 @@ temp_stack:
 
 
 	.bss
-	.globl page_directory, page_table0, page_table1
+	.globl page_directory, page_table0, page_table_high
 	.align 4096
 	.globl multiboot_info
 multiboot_info:
 	.zero 0x1000
 page_directory:
 	.zero 0x1000
-page_table0:
+page_table0:	 // 0xC0000000
 	.zero 0x1000
-page_table1:
+page_table1:	 // 0xC0400000
 	.zero 0x1000
+page_table2:	 // 0xC0800000
+	.zero 0x1000
+page_table_high: // 0xFFC00000
+	.zero 0x1000
+
 stack:
 	.zero 0x10000
 
