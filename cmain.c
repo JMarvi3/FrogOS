@@ -15,10 +15,12 @@ void reboot()
 	outportb(0x64, 0xfe);
 }
 
-void irq48_handler(struct regs *r)
+void irq48_handler(struct regs *r, void *data)
 {
 	printf("SYSCALL: %x%x\n",r->ebx,r->eax);
 }
+
+irq_handler_t irq48_h={irq48_handler,0,0};
 
 extern void set_pit();
 extern unsigned long long pit_counter;
@@ -30,11 +32,11 @@ void cmain()
 	disable();
 	cls();
 	gdt_flush();
+	init_mem();
 	set_irqs();
 	enable();
 	set_pit();
-	init_mem();
-	install_irq_handler(48-32, irq48_handler);
+	install_irq_handler(48-32, &irq48_h);
 	init_kbd();
 //	pci_init();
 //	print_info();

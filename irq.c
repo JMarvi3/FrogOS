@@ -90,22 +90,41 @@ unsigned char *exception_messages[] =
 	"Reserved"
 };
 
-void irq9_handler(struct regs *r) { puts("irq9"); }
-void irqa_handler(struct regs *r) { puts("irqa"); }
-void irqb_handler(struct regs *r) { puts("irqb"); }
-void *irq_handlers[] = 
+void irq9_handler(struct regs *r, void *data) { puts("irq9"); }
+irq_handler_t irq9_h={irq9_handler, 0, 0};
+void irqa_handler(struct regs *r, void *data) { puts("irqa"); }
+irq_handler_t irqa_h={irqa_handler, 0, 0};
+void irqb_handler(struct regs *r, void *data) { puts("irqb"); }
+irq_handler_t irqb_h={irqb_handler, 0, 0};
+irq_handler_t *irq_handlers[] = 
 {
   0, 0, 0, 0, 0, 0, 0, 0, 0,
-  irq9_handler, irqa_handler, irqb_handler, 0, 0, 0, 0, 0, 0
+  &irq9_h, &irqa_h, &irqb_h, 0, 0, 0, 0, 0, 0
 };
 
-void install_irq_handler(int irq, void (*handler)(struct regs *r))
+void install_irq_handler(int irq, irq_handler_t *handler)
 {
+	disable();
+	handler->next=irq_handlers[irq];
 	irq_handlers[irq] = handler;
+	enable();
 }
-void uninstall_irq_handler(int irq)
+void uninstall_irq_handler(int irq, irq_handler_t *handler)
 {
-	irq_handlers[irq] = 0;
+	disable();
+	if(irq_handlers[irq]==handler) {
+		irq_handlers[irq]=handler->next;
+	} else {
+		irq_handler_t *ptr=irq_handlers[irq];
+		while(ptr) {
+			if(ptr->next==handler) {
+				ptr->next=handler->next;
+				break;
+			}
+			ptr=ptr->next;
+		}
+	}
+	enable();
 }
 
 void irq_handler(struct regs *r)
@@ -122,8 +141,11 @@ void irq_handler(struct regs *r)
 //	printf("%s\nException. System Halted!\n",exception_messages[r->int_no]);
      	for(;;) __asm__("hlt");
      } else {
-	void (*handler)(struct regs *r)=irq_handlers[r->int_no-32];
-	if(handler) handler(r);
+	irq_handler_t *ptr=irq_handlers[r->int_no-32];
+	while(ptr) {
+		ptr->handler(r,ptr->data);
+		ptr=ptr->next;
+	}
 	if(r->int_no >= 40)
         	outportb(0xA0,0x20);
 	outportb(0x20,0x20);

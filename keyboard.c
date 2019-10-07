@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <conio.h>
 #include <kbd_scancode.h>
+#include <memory.h>
+
 #define KBD_QUEUE_SIZE 128
 unsigned int kbd_buffer[KBD_QUEUE_SIZE];
 int kbd_size=0, kbd_head=0, kbd_tail=0;
@@ -136,7 +138,7 @@ void decode(unsigned char c)
 	}
 }
 
-void kbd_handler(struct regs *r)
+void kbd_handler(struct regs *r, void *data)
 {
 	decode(inportb(0x60));
 }
@@ -145,9 +147,15 @@ void kbd_handler(struct regs *r)
 
 void init_kbd()
 {
-	disable();
-	install_irq_handler(1, kbd_handler);
-	unsigned char mask = inportb(0x21);
-	outportb(0x21, mask & ~2);
-	enable();
+	irq_handler_t *handler=alloc(sizeof(irq_handler_t),1);
+	if(handler) {
+		handler->data=0;
+		handler->handler=kbd_handler;
+		handler->next=0;
+		install_irq_handler(1, handler);
+		disable();
+		unsigned char mask = inportb(0x21);
+		outportb(0x21, mask & ~2);
+		enable();
+	}
 }

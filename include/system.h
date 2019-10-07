@@ -12,8 +12,14 @@ struct regs
     unsigned int eip, cs, eflags, useresp, ss;
 };
 
-void install_irq_handler(int irq, void (*handler)(struct regs *r));
-void uninstall_irq_handler(int irq);
+typedef struct irq_handler_struct {
+	void (*handler)(struct regs *r, void *data);
+	void *data;
+	struct irq_handler_struct *next;
+} irq_handler_t;
+
+void install_irq_handler(int irq, irq_handler_t *handler);
+void uninstall_irq_handler(int irq, irq_handler_t *handler);
 void *get_physaddr(void *vaddr);
 void init_kbd();
 #endif
