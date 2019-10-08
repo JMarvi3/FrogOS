@@ -31,6 +31,7 @@ typedef struct {
 	uint32_t rx_buffers, tx_buffers;
 	uint8_t *rdes, *tdes;
 	uint32_t num_packets;
+	uint8_t mii, fdx;
 } pcnet32_dev;
 
 #define PCNET32_WIO_RDP 0x10
@@ -137,18 +138,22 @@ void pcnet32_irq_handler(struct regs *r, void *data) {
 		    ++num_rx;
 		    if(dev->rdes[16*de_ptr+6]&(1<<6)) ++num_pam;
 		    uint16_t mcnt=dev->rdes[16*de_ptr+8]|dev->rdes[16*de_ptr+9]<<8;
-		    printf("(%d,%x,%p,%p) ",mcnt,dev->rdes[16*de_ptr+7],
+		/*    printf("(%d,%x,%p,%p) ",mcnt,dev->rdes[16*de_ptr+7],
 			&dev->rdes[16*de_ptr],
 			rx_buff);
+		*/
 		    memset((void *)rx_buff,0,mcnt);
 		    dev->rdes[16*de_ptr+7]|=0x80;
 		    ++de_ptr;
  		    if(de_ptr>=dev->rx_buffer_count) de_ptr=0;
 		}
 		dev->rx_buffer_ptr=de_ptr;
+		//if(num_rx) printf("%d packets received. (%d) ",num_rx,num_pam);
+		//printf("%d total\n",dev->num_packets);
+		if(!num_rx) printf("no packets: csr0: %x\n",csr0);
+	} else {
+		printf("hmm... csr0: %x %ld\n",csr0,dev->num_packets);
 	}
-	if(num_rx) printf("%d packets received. (%d) ",num_rx,num_pam);
-	printf("%d total\n",dev->num_packets);
 }
 
 void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
@@ -156,10 +161,24 @@ void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 	printf("PCNET32: ");
 	pcnet32_reset(ioaddr);
 	uint32_t chip_version=dwio_read_csr(ioaddr,88) | dwio_read_csr(ioaddr,89)<<16;
-	if (chip_version != 0x2621003) goto err;
+	if((chip_version&0xfff) != 0x003) goto err;
+
 	pcnet32_dev *dev=alloc(sizeof(pcnet32_dev),1);
 	if(!dev) goto err;
 	dev->pcidev=pcidev; dev->ioaddr=ioaddr; dev->interrupt=interrupt;
+
+	dev->mii = dev->fdx = 0;
+	switch(chip_version>>12) {
+		case 0x2621:
+			dev->fdx=1;
+			break;
+		case 0x2625:
+			dev->fdx=1;
+			dev->mii=1;
+			break;
+		default:
+			goto err;
+	}
 	dev->num_packets=0;
 	pci_adjust(pcidev);
 	uint16_t i;
@@ -172,8 +191,8 @@ void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 	dwio_write_csr(ioaddr,58,csr58);
 
 
-#define PCNET32_LOG_RX_BUFF 5
-#define PCNET32_LOG_TX_BUFF 5
+#define PCNET32_LOG_RX_BUFF 6
+#define PCNET32_LOG_TX_BUFF 4
 	dev->rx_buffer_count=1<<PCNET32_LOG_RX_BUFF;
 	dev->rx_buffer_ptr=0;
 	dev->rx_buffers=(uint32_t)alloc(dev->rx_buffer_count*PCNET32_BUFFER_SIZE,1);

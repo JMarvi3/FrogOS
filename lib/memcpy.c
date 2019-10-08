@@ -2,9 +2,6 @@
 
 void *memcpy(void *dest, const void *src, size_t n)
 {
-  register size_t count=n;
-  register unsigned char *d=(unsigned char*)dest;
-  register const unsigned char *s=(const unsigned char*)src;
-  while(count--) *d++=*s++;
+  __asm__("cld; rep movsb"::"c"(n),"S"(src),"D"(dest));
   return dest;
 }
