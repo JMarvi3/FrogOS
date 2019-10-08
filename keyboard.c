@@ -153,9 +153,5 @@ void init_kbd()
 		handler->handler=kbd_handler;
 		handler->next=0;
 		install_irq_handler(1, handler);
-		disable();
-		unsigned char mask = inportb(0x21);
-		outportb(0x21, mask & ~2);
-		enable();
 	}
 }

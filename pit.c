@@ -23,10 +23,6 @@ void set_pit()
 		io_wait();
 		outportb(0x40, 0x2e);
 		io_wait();
-		unsigned char mask = inportb(0x21);
-		io_wait();
-		outportb(0x21, mask & ~1);
-		io_wait();
 		enable();
 	}
 }

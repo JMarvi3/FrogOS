@@ -142,6 +142,7 @@ void pcnet32_irq_handler(struct regs *r, void *data) {
 	}
 	if(num_rx) printf("%d packets received. (%d)\n",num_rx,num_pam);
 }
+
 void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 {
 	printf("PCNET32 (%x,%x,%x) %d:\n",pcidev->bus,pcidev->device,pcidev->function,interrupt);

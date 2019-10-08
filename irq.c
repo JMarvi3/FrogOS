@@ -3,6 +3,7 @@
 #include <string.h>
 #include <system.h>
 #include <stdio.h>
+#include <stdint.h>
 
 extern void irq0();
 extern void irq1();
@@ -96,13 +97,17 @@ irq_handler_t *irq_handlers[] =
   0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
+void irq_set_mask(uint8_t);
+void irq_clear_mask(uint8_t);
 void install_irq_handler(int irq, irq_handler_t *handler)
 {
+	if(irq_handlers[irq]==0) irq_clear_mask(irq);
 	disable();
 	handler->next=irq_handlers[irq];
 	irq_handlers[irq] = handler;
 	enable();
 }
+
 void uninstall_irq_handler(int irq, irq_handler_t *handler)
 {
 	disable();
@@ -119,7 +124,9 @@ void uninstall_irq_handler(int irq, irq_handler_t *handler)
 		}
 	}
 	enable();
+	if(irq_handlers[irq]==0 && irq!=2) irq_set_mask(irq);
 }
+
 
 void irq_handler(struct regs *r)
 {
@@ -144,6 +151,36 @@ void irq_handler(struct regs *r)
         	outportb(0xA0,0x20);
 	outportb(0x20,0x20);
      }
+}
+
+void irq_set_mask(uint8_t irq)
+{
+	uint16_t port = 0x21;
+	uint8_t value;
+	if(irq>=8) {
+		port=0xA1; irq-=8;
+	}
+	disable();
+	value=inportb(port)|(1<<irq);
+	outportb(port,value);
+	enable();
+}
+
+void irq_clear_mask(uint8_t irq)
+{
+	if(irq>=16) return;
+	uint16_t port = 0x21;
+	uint8_t value;
+	if(irq>=8) {
+		port=0xA1; irq-=8;
+	}
+	disable();
+	printf("clear mask: %d %x %x ",irq,port,inportb(port));
+	value=inportb(port)&~(1<<irq);
+	printf(" %x ",value);
+	outportb(port,value);
+	printf("%x\n",inportb(port));
+	enable();
 }
 
 typedef struct idt_entry {
@@ -237,7 +274,7 @@ io_wait();
 outportb(0xA1,0x01);
 io_wait();
 // mask out all interrupts
-outportb(0x21,0xff);
+outportb(0x21,0xfb);
 io_wait();
 outportb(0xA1,0xff);
 io_wait();
