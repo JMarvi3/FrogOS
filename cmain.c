@@ -38,7 +38,7 @@ void cmain()
 	set_pit();
 	install_irq_handler(48-32, &irq48_h);
 	init_kbd();
-//	pci_init();
+	pci_init();
 //	print_info();
 /*
 	printf("%p\n",get_physaddr((void *)0xE00B8000));

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <system.h>
 #include <conio.h>
+#include <string.h>
 
 typedef struct __attribute__ ((packed)){
 	uint16_t mode;
@@ -29,6 +30,7 @@ typedef struct {
 	uint16_t  rx_buffer_count, tx_buffer_count;
 	uint32_t rx_buffers, tx_buffers;
 	uint8_t *rdes, *tdes;
+	uint32_t num_packets;
 } pcnet32_dev;
 
 #define PCNET32_WIO_RDP 0x10
@@ -76,7 +78,7 @@ uint32_t dwio_read_bcr(uint16_t ioaddr, uint16_t index)
 
 
 void print_hwaddr(uint8_t *hw_addr) {
-	printf("%02x:%02x:%02x:%02x:%02x:%02x\n",
+	printf("%02x:%02x:%02x:%02x:%02x:%02x",
 		hw_addr[0], hw_addr[1], hw_addr[2],
 		hw_addr[3], hw_addr[4], hw_addr[5]);
 }
@@ -113,8 +115,8 @@ void pcnet32_initialize_de(pcnet32_dev *dev, uint16_t idx, uint8_t is_tx)
 	} else {
 		des=dev->rdes; buf_addr=dev->rx_buffers;
 	}
-	*(uint32_t*)&des[idx*16] =(uint32_t) get_physaddr((void*)(buf_addr+idx*PCNET32_BUFFER_SIZE));
 	memset(&des[idx*16], 0, 16);
+	*(uint32_t*)&des[idx*16] =(uint32_t) get_physaddr((void*)(buf_addr+idx*PCNET32_BUFFER_SIZE));
 	uint16_t bcnt = ((uint16_t)(-PCNET32_BUFFER_SIZE))&0x0fff|0xf000;
 	*(uint16_t *)&des[idx*16+4]=bcnt;
 	if(!is_tx) des[idx*16+7]=0x80;
@@ -130,29 +132,35 @@ void pcnet32_irq_handler(struct regs *r, void *data) {
 		for(i=0;i<dev->rx_buffer_count;++i) {
 		    if(!pcnet32_driverowns(dev->rdes, de_ptr))
 			break;
+		    ++dev->num_packets;
+		    uint32_t rx_buff=dev->rx_buffers+de_ptr*PCNET32_BUFFER_SIZE;
 		    ++num_rx;
 		    if(dev->rdes[16*de_ptr+6]&(1<<6)) ++num_pam;
 		    uint16_t mcnt=dev->rdes[16*de_ptr+8]|dev->rdes[16*de_ptr+9]<<8;
-		    printf("(%d)",mcnt);
+		    printf("(%d,%x,%p,%p) ",mcnt,dev->rdes[16*de_ptr+7],
+			&dev->rdes[16*de_ptr],
+			rx_buff);
+		    memset((void *)rx_buff,0,mcnt);
 		    dev->rdes[16*de_ptr+7]|=0x80;
 		    ++de_ptr;
- 		    if(de_ptr>dev->rx_buffer_count) de_ptr=0;
-		}	
+ 		    if(de_ptr>=dev->rx_buffer_count) de_ptr=0;
+		}
 		dev->rx_buffer_ptr=de_ptr;
 	}
-	if(num_rx) printf("%d packets received. (%d)\n",num_rx,num_pam);
+	if(num_rx) printf("%d packets received. (%d) ",num_rx,num_pam);
+	printf("%d total\n",dev->num_packets);
 }
 
 void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 {
-	printf("PCNET32 (%x,%x,%x) %d:\n",pcidev->bus,pcidev->device,pcidev->function,interrupt);
+	printf("PCNET32: ");
 	pcnet32_reset(ioaddr);
 	uint32_t chip_version=dwio_read_csr(ioaddr,88) | dwio_read_csr(ioaddr,89)<<16;
-	printf("version: %08lx\n",chip_version);
 	if (chip_version != 0x2621003) goto err;
 	pcnet32_dev *dev=alloc(sizeof(pcnet32_dev),1);
 	if(!dev) goto err;
 	dev->pcidev=pcidev; dev->ioaddr=ioaddr; dev->interrupt=interrupt;
+	dev->num_packets=0;
 	pci_adjust(pcidev);
 	uint16_t i;
 	for(i=0;i<6;++i) (dev->hw_addr)[i]=inportb(ioaddr+i);
@@ -163,11 +171,15 @@ void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 	csr58 = csr58&0xfffffff0 | 0x2;
 	dwio_write_csr(ioaddr,58,csr58);
 
-	dev->rx_buffer_count=64;
+
+#define PCNET32_LOG_RX_BUFF 5
+#define PCNET32_LOG_TX_BUFF 5
+	dev->rx_buffer_count=1<<PCNET32_LOG_RX_BUFF;
 	dev->rx_buffer_ptr=0;
 	dev->rx_buffers=(uint32_t)alloc(dev->rx_buffer_count*PCNET32_BUFFER_SIZE,1);
 	if(!dev->rx_buffers) goto err;
-	dev->tx_buffer_count=32;
+	memset((void *)dev->rx_buffers,0,dev->rx_buffer_count*PCNET32_BUFFER_SIZE);
+	dev->tx_buffer_count=1<<PCNET32_LOG_TX_BUFF;
 	dev->tx_buffer_ptr=0;
 	dev->tx_buffers=(uint32_t)alloc(dev->tx_buffer_count*PCNET32_BUFFER_SIZE,1);
 	if(!dev->tx_buffers) goto err;
@@ -177,18 +189,15 @@ void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 	if(!dev->tdes) goto err;
 	for(i=0;i<dev->rx_buffer_count;++i) pcnet32_initialize_de(dev,i,0);
 	for(i=0;i<dev->tx_buffer_count;++i) pcnet32_initialize_de(dev,i,1);
-	dev->card_reg.mode=0; dev->card_reg.rlen=6<<4; dev->card_reg.tlen=5<<4;
+	dev->card_reg.mode=0;
+	dev->card_reg.rlen=PCNET32_LOG_RX_BUFF<<4;
+	dev->card_reg.tlen=PCNET32_LOG_RX_BUFF<<4;
 	memcpy(dev->card_reg.hw_addr,dev->hw_addr,6);
 	dev->card_reg.reserved=0;
 	memset(dev->card_reg.ladr,0xff,8);
 	dev->card_reg.rde=(uint32_t)get_physaddr(dev->rdes);
 	dev->card_reg.tde=(uint32_t)get_physaddr(dev->tdes);
 
-/*
-	uint32_t csr3=dwio_read_csr(ioaddr,3);
-	csr3|=0x5700; // 0x5700
-	dwio_write_csr(ioaddr,3,csr3);
-*/
 	dev->handler.handler = pcnet32_irq_handler;
 	dev->handler.data=(void *)dev;
 	dev->handler.next=0;
@@ -205,8 +214,8 @@ void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 
 	// Set start and enable interrupts
 	dwio_write_csr(ioaddr,0,dwio_read_csr(ioaddr,0)|(1<<1)|(1<<6)|(1<<8));
-	printf("Init.");
+	printf(" running");
         
 	err:
-	printf("pcnet32 done.\n");
+	printf(" done.\n");
 }

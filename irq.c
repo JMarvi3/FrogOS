@@ -175,11 +175,8 @@ void irq_clear_mask(uint8_t irq)
 		port=0xA1; irq-=8;
 	}
 	disable();
-	printf("clear mask: %d %x %x ",irq,port,inportb(port));
 	value=inportb(port)&~(1<<irq);
-	printf(" %x ",value);
 	outportb(port,value);
-	printf("%x\n",inportb(port));
 	enable();
 }
 
