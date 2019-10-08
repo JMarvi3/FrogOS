@@ -84,6 +84,9 @@ void cmain()
 				case 'i':
 					pci_init();
 					break;
+				case 'n':
+					__asm__("int $(32+9)");
+					break;
 				case 'p':
 					print_info();
 					break;
@@ -93,5 +96,6 @@ void cmain()
 			}	
 		}
 		__asm__ __volatile__ ("hlt");
+//		__asm__("int $(32+9)");
 	}
 }

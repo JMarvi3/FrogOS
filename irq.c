@@ -90,16 +90,10 @@ unsigned char *exception_messages[] =
 	"Reserved"
 };
 
-void irq9_handler(struct regs *r, void *data) { puts("irq9"); }
-irq_handler_t irq9_h={irq9_handler, 0, 0};
-void irqa_handler(struct regs *r, void *data) { puts("irqa"); }
-irq_handler_t irqa_h={irqa_handler, 0, 0};
-void irqb_handler(struct regs *r, void *data) { puts("irqb"); }
-irq_handler_t irqb_h={irqb_handler, 0, 0};
 irq_handler_t *irq_handlers[] = 
 {
   0, 0, 0, 0, 0, 0, 0, 0, 0,
-  &irq9_h, &irqa_h, &irqb_h, 0, 0, 0, 0, 0, 0
+  0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
 void install_irq_handler(int irq, irq_handler_t *handler)
