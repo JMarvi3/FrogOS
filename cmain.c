@@ -5,6 +5,7 @@
 #include <system.h>
 #include <unistd.h>
 #include <memory.h>
+#include <net.h>
 
 extern void gdt_flush();
 extern void set_irqs();
@@ -26,6 +27,7 @@ extern void set_pit();
 extern unsigned long long pit_counter;
 extern void print_info();
 extern void pci_init();
+extern void print_mem();
 
 void cmain()
 {
@@ -49,6 +51,7 @@ void cmain()
 */
 	puts("Done.\n");
 	for(;;) {
+		net_process();
 		while(!kbd_isempty()) {
 			unsigned int c=kbd_dequeue();
 			switch(c&0x7f) {
@@ -81,11 +84,11 @@ void cmain()
 					popl %eax; \
 					popl %ebx");
 					break;
-				case 'i':
-					pci_init();
+				case 'm':
+					print_mem();
 					break;
 				case 'n':
-					__asm__("int $(32+9)");
+					net_print_stats();
 					break;
 				case 'p':
 					print_info();

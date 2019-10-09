@@ -7,6 +7,7 @@
 #include <system.h>
 #include <conio.h>
 #include <string.h>
+#include <net.h>
 
 typedef struct __attribute__ ((packed)){
 	uint16_t mode;
@@ -25,12 +26,10 @@ typedef struct {
 	uint8_t interrupt;
 	irq_handler_t handler;
 	pcnet32_card_reg card_reg __attribute__((aligned(32)));
-	uint8_t hw_addr[6];
 	uint16_t rx_buffer_ptr, tx_buffer_ptr;
 	uint16_t  rx_buffer_count, tx_buffer_count;
 	uint32_t rx_buffers, tx_buffers;
 	uint8_t *rdes, *tdes;
-	uint32_t num_packets;
 	uint8_t mii, fdx;
 } pcnet32_dev;
 
@@ -123,37 +122,37 @@ void pcnet32_initialize_de(pcnet32_dev *dev, uint16_t idx, uint8_t is_tx)
 	if(!is_tx) des[idx*16+7]=0x80;
 }
 
+extern unsigned long long pit_counter;
 void pcnet32_irq_handler(struct regs *r, void *data) {
-	pcnet32_dev *dev=(pcnet32_dev *)data;
-	uint16_t num_rx=0, num_pam=0;
+	net_dev *netdev=(net_dev *)data;
+	pcnet32_dev *dev=(pcnet32_dev *)netdev->priv;;
 	uint32_t csr0=dwio_read_csr(dev->ioaddr,0);
 	if((csr0&0x600)!=0) {
 		dwio_write_csr(dev->ioaddr,0,csr0|(1<<9)|(1<<10));
-		uint16_t i, de_ptr=dev->rx_buffer_ptr;
-		for(i=0;i<dev->rx_buffer_count;++i) {
-		    if(!pcnet32_driverowns(dev->rdes, de_ptr))
-			break;
-		    ++dev->num_packets;
-		    uint32_t rx_buff=dev->rx_buffers+de_ptr*PCNET32_BUFFER_SIZE;
-		    ++num_rx;
-		    if(dev->rdes[16*de_ptr+6]&(1<<6)) ++num_pam;
-		    uint16_t mcnt=dev->rdes[16*de_ptr+8]|dev->rdes[16*de_ptr+9]<<8;
-		/*    printf("(%d,%x,%p,%p) ",mcnt,dev->rdes[16*de_ptr+7],
-			&dev->rdes[16*de_ptr],
-			rx_buff);
-		*/
-		    memset((void *)rx_buff,0,mcnt);
-		    dev->rdes[16*de_ptr+7]|=0x80;
-		    ++de_ptr;
- 		    if(de_ptr>=dev->rx_buffer_count) de_ptr=0;
-		}
-		dev->rx_buffer_ptr=de_ptr;
-		//if(num_rx) printf("%d packets received. (%d) ",num_rx,num_pam);
-		//printf("%d total\n",dev->num_packets);
-		if(!num_rx) printf("no packets: csr0: %x\n",csr0);
+		netdev->needs_work=1;
 	} else {
-		printf("hmm... csr0: %x %ld\n",csr0,dev->num_packets);
+		printf("hmm... %lld csr0: %x\n",pit_counter,csr0);
 	}
+}
+
+void pcnet32_do_irq_work(net_dev *netdev)
+{
+	pcnet32_dev *dev=(pcnet32_dev *)netdev->priv;
+	netdev->needs_work=0;
+	uint16_t i, de_ptr=dev->rx_buffer_ptr;
+	for(i=0;i<dev->rx_buffer_count;++i) {
+	    if(!pcnet32_driverowns(dev->rdes, de_ptr))
+		break;
+	    uint32_t rx_buff=dev->rx_buffers+de_ptr*PCNET32_BUFFER_SIZE;
+	    ++netdev->rx_packets;
+	    uint16_t mcnt=dev->rdes[16*de_ptr+8]|dev->rdes[16*de_ptr+9]<<8;
+		// do something with the packet, please.
+	    memset((void *)rx_buff,0,mcnt);
+	    dev->rdes[16*de_ptr+7]|=0x80;
+	    ++de_ptr;
+	    if(de_ptr>=dev->rx_buffer_count) de_ptr=0;
+	}
+	dev->rx_buffer_ptr=de_ptr;
 }
 
 void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
@@ -163,8 +162,11 @@ void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 	uint32_t chip_version=dwio_read_csr(ioaddr,88) | dwio_read_csr(ioaddr,89)<<16;
 	if((chip_version&0xfff) != 0x003) goto err;
 
-	pcnet32_dev *dev=alloc(sizeof(pcnet32_dev),1);
-	if(!dev) goto err;
+	net_dev *netdev=alloc_netdev(sizeof(pcnet32_dev));
+	if(!netdev) goto err;
+	pcnet32_dev *dev=(pcnet32_dev *)netdev->priv;
+	netdev->do_work=pcnet32_do_irq_work;
+	
 	dev->pcidev=pcidev; dev->ioaddr=ioaddr; dev->interrupt=interrupt;
 
 	dev->mii = dev->fdx = 0;
@@ -179,11 +181,10 @@ void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 		default:
 			goto err;
 	}
-	dev->num_packets=0;
 	pci_adjust(pcidev);
 	uint16_t i;
-	for(i=0;i<6;++i) (dev->hw_addr)[i]=inportb(ioaddr+i);
-	print_hwaddr(dev->hw_addr);
+	for(i=0;i<6;++i) (netdev->hw_addr)[i]=inportb(ioaddr+i);
+	print_hwaddr(netdev->hw_addr);
 
 	//set SWSTYLE to 2
 	uint32_t csr58 = dwio_read_csr(ioaddr,58);
@@ -211,14 +212,14 @@ void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 	dev->card_reg.mode=0;
 	dev->card_reg.rlen=PCNET32_LOG_RX_BUFF<<4;
 	dev->card_reg.tlen=PCNET32_LOG_RX_BUFF<<4;
-	memcpy(dev->card_reg.hw_addr,dev->hw_addr,6);
+	memcpy(dev->card_reg.hw_addr,netdev->hw_addr,6);
 	dev->card_reg.reserved=0;
 	memset(dev->card_reg.ladr,0xff,8);
 	dev->card_reg.rde=(uint32_t)get_physaddr(dev->rdes);
 	dev->card_reg.tde=(uint32_t)get_physaddr(dev->tdes);
 
 	dev->handler.handler = pcnet32_irq_handler;
-	dev->handler.data=(void *)dev;
+	dev->handler.data=(void *)netdev;
 	dev->handler.next=0;
 	install_irq_handler(interrupt,&(dev->handler));
 	
