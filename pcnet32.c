@@ -8,6 +8,7 @@
 #include <conio.h>
 #include <string.h>
 #include <net.h>
+#include <ether.h>
 
 typedef struct __attribute__ ((packed)){
 	uint16_t mode;
@@ -77,12 +78,6 @@ uint32_t dwio_read_bcr(uint16_t ioaddr, uint16_t index)
 }
 
 
-void print_hwaddr(uint8_t *hw_addr) {
-	printf("%02x:%02x:%02x:%02x:%02x:%02x",
-		hw_addr[0], hw_addr[1], hw_addr[2],
-		hw_addr[3], hw_addr[4], hw_addr[5]);
-}
-
 unsigned long long pit_counter;
 void pcnet32_reset(uint16_t ioaddr)
 {
@@ -146,7 +141,8 @@ void pcnet32_do_irq_work(net_dev *netdev)
 	    uint32_t rx_buff=dev->rx_buffers+de_ptr*PCNET32_BUFFER_SIZE;
 	    ++netdev->rx_packets;
 	    uint16_t mcnt=dev->rdes[16*de_ptr+8]|dev->rdes[16*de_ptr+9]<<8;
-		// do something with the packet, please.
+	    uint8_t pam=dev->rdes[16*de_ptr+6]&(1<<6);
+		ether_process_frame(netdev,(ether_frame *)rx_buff,mcnt,(pam==0));
 	    memset((void *)rx_buff,0,mcnt);
 	    dev->rdes[16*de_ptr+7]|=0x80;
 	    ++de_ptr;

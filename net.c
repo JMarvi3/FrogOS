@@ -2,6 +2,7 @@
 #include <memory.h>
 #include <string.h>
 #include <stdio.h>
+
 #define NET_NUM_DEVS 16
 net_dev net_devs[NET_NUM_DEVS];
 uint16_t net_num_devs=0;
@@ -23,7 +24,8 @@ net_dev *alloc_netdev(uint32_t n) {
 }
 
 void net_ifconfig(uint16_t dev_no, uint8_t *ipv4_addr) {
-	memcpy(net_devs[dev_no].ipv4_addr,ipv4_addr,4);
+	if (net_num_devs>dev_no)
+		memcpy(net_devs[dev_no].ipv4_addr,ipv4_addr,4);
 }
 
 void net_process() {
@@ -40,4 +42,31 @@ void net_print_stats() {
 	for(i=0;i<net_num_devs;++i) {
 		printf("%d rx:%ld tx:%ld\n",i,net_devs[i].rx_packets,net_devs[i].tx_packets);
 	}
+}
+
+void print_hwaddr(uint8_t *hw_addr) {
+        printf("%02x:%02x:%02x:%02x:%02x:%02x",
+                hw_addr[0], hw_addr[1], hw_addr[2],
+                hw_addr[3], hw_addr[4], hw_addr[5]);
+}
+
+uint32_t htonl(uint32_t hl)
+{
+	register uint32_t ret;
+	__asm__ ("bswap %%eax":"=a"(ret):"a"(hl));
+	return ret;
+}
+uint32_t ntohl(uint32_t nl)
+{
+	return htonl(nl);
+}
+uint16_t htons(uint16_t hs)
+{
+	register uint16_t ret;
+	__asm__ ("xchg %%al,%%ah":"=a"(ret):"a"(hs));
+	return ret;
+}
+uint16_t ntohs(uint16_t ns) 
+{
+	return htons(ns);
 }
