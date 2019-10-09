@@ -18,7 +18,7 @@ switch(type) {
 		printf(" -> ");
 		print_hwaddr(frame->dest);
 		printf("\n");
-		dump((void *)frame+14,len-14-4);
+		dump((void *)frame+14,28);// len-14-4
 		printf("\n");
 		break;
 	case 0x0842: //Wake-On-Lan
