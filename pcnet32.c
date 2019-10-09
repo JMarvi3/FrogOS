@@ -205,7 +205,7 @@ void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 	if(!dev->tdes) goto err;
 	for(i=0;i<dev->rx_buffer_count;++i) pcnet32_initialize_de(dev,i,0);
 	for(i=0;i<dev->tx_buffer_count;++i) pcnet32_initialize_de(dev,i,1);
-	dev->card_reg.mode=0;
+	dev->card_reg.mode=0; // promiscuous: (1<<15);
 	dev->card_reg.rlen=PCNET32_LOG_RX_BUFF<<4;
 	dev->card_reg.tlen=PCNET32_LOG_RX_BUFF<<4;
 	memcpy(dev->card_reg.hw_addr,netdev->hw_addr,6);
