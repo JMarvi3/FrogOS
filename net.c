@@ -44,12 +44,6 @@ void net_print_stats() {
 	}
 }
 
-void print_hwaddr(uint8_t *hw_addr) {
-        printf("%02x:%02x:%02x:%02x:%02x:%02x",
-                hw_addr[0], hw_addr[1], hw_addr[2],
-                hw_addr[3], hw_addr[4], hw_addr[5]);
-}
-
 uint32_t htonl(uint32_t hl)
 {
 	register uint32_t ret;

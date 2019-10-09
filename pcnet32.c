@@ -141,8 +141,7 @@ void pcnet32_do_irq_work(net_dev *netdev)
 	    uint32_t rx_buff=dev->rx_buffers+de_ptr*PCNET32_BUFFER_SIZE;
 	    ++netdev->rx_packets;
 	    uint16_t mcnt=dev->rdes[16*de_ptr+8]|dev->rdes[16*de_ptr+9]<<8;
-	    uint8_t pam=dev->rdes[16*de_ptr+6]&(1<<6);
-		ether_process_frame(netdev,(ether_frame *)rx_buff,mcnt,(pam==0));
+	    ether_process_frame(netdev,(ether_frame *)rx_buff,mcnt);
 	    memset((void *)rx_buff,0,mcnt);
 	    dev->rdes[16*de_ptr+7]|=0x80;
 	    ++de_ptr;
@@ -180,7 +179,7 @@ void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 	pci_adjust(pcidev);
 	uint16_t i;
 	for(i=0;i<6;++i) (netdev->hw_addr)[i]=inportb(ioaddr+i);
-	print_hwaddr(netdev->hw_addr);
+	printf(eth_ntoa(netdev->hw_addr));
 
 	//set SWSTYLE to 2
 	uint32_t csr58 = dwio_read_csr(ioaddr,58);

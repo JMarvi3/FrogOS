@@ -20,7 +20,6 @@ void	init_net();
 void	net_process();
 void	net_print_stats();
 void	net_ifconfig(uint16_t dev_no, uint8_t *ipv4_addr);
-void	print_hwaddr(uint8_t *hw_addr);
 uint32_t htonl(uint32_t hl);
 uint32_t ntohl(uint32_t nl);
 uint16_t htons(uint16_t hs);

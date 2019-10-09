@@ -12,6 +12,7 @@ typedef struct __attribute__ ((packed)) {
 } ether_frame;
 
 
-void ether_process_frame(net_dev *dev, ether_frame *frame, uint16_t len, uint8_t broadcast);
+void ether_process_frame(net_dev *dev, ether_frame *frame, uint16_t len);
+const char *eth_ntoa(const void *hw_addr);
 
 #endif
