@@ -25,4 +25,6 @@ uint32_t ntohl(uint32_t nl);
 uint16_t htons(uint16_t hs);
 uint16_t ntohs(uint16_t ns);
 
+void *net_alloc();
+void net_free(void *buff);
 #endif

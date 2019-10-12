@@ -15,6 +15,6 @@ typedef struct __attribute__((packed)) {
  in_addr tpa;
 } arp_packet;
 
-void arp_process_packet(uint8_t *src, uint8_t *dest, arp_packet *packet);
+void arp_process_packet(net_dev *dev,uint8_t *src, uint8_t *dest, arp_packet *packet);
 
 #endif

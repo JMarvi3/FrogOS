@@ -6,8 +6,32 @@
 #define NET_NUM_DEVS 16
 net_dev net_devs[NET_NUM_DEVS];
 uint16_t net_num_devs=0;
+void *buffers;
 
 void init_net() {
+}
+
+void *net_alloc() {
+	if(!buffers) {
+		buffers=alloc(32*2000,1);
+		if(buffers) {
+			memset(buffers,0,32*2000);
+			uint16_t i;
+			for(i=0;i<31*2000;i+=2000)
+			*(void **)(buffers+i)=buffers+i+2000;
+		} else {
+			return 0;
+		}
+	}
+	void *ret=buffers;
+	buffers=*(void **)(ret);
+	return ret;
+}
+
+void net_free(void *buff) {
+	memset(buff,0,2000);
+	*(void **)buff=buffers;
+	buffers=buff;
 }
 
 net_dev *alloc_netdev(uint32_t n) {

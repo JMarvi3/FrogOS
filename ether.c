@@ -29,7 +29,7 @@ switch(type) {
 	case 0x0806: //ARP
 		printf("ARP: %d %s ",len,eth_ntoa(frame->src));
 		printf("-> %s\n",eth_ntoa(frame->dest));
-		arp_process_packet(frame->src,frame->dest,(arp_packet *)frame->payload);
+		arp_process_packet(dev,frame->src,frame->dest,(arp_packet *)frame->payload);
 		break;
 	case 0x0842: //Wake-On-Lan
 		printf("WOL: %d %s ",len,eth_ntoa(frame->src));
