@@ -25,6 +25,7 @@ switch(type) {
 	case 0x0800: //IPv4
 		printf("IPv4: %d %s ",len,eth_ntoa(frame->src));
 		printf("-> %s\n",eth_ntoa(frame->dest));
+		dump(frame->payload,len-14-4);
 		break;
 	case 0x0806: //ARP
 		printf("ARP: %d %s ",len,eth_ntoa(frame->src));
@@ -41,4 +42,9 @@ switch(type) {
 		break;
 }
 
+}
+
+int ether_sendframe(net_dev *dev, void *frame, size_t len)
+{
+	return dev->tx_packet(dev,frame,len);
 }

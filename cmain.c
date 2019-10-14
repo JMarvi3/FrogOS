@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <memory.h>
 #include <net.h>
+#include <ipv4.h>
+#include <string.h>
 
 extern void gdt_flush();
 extern void set_irqs();
@@ -29,6 +31,9 @@ extern void print_info();
 extern void pci_init();
 extern void print_mem();
 
+uint8_t ip[] = {192,168,201,77};
+uint8_t netmask[] = {255,255,255,0};
+
 void cmain()
 {
 	disable();
@@ -41,6 +46,10 @@ void cmain()
 	install_irq_handler(48-32, &irq48_h);
 	init_kbd();
 	pci_init();
+	in_addr ipv4_addr, ipv4_netmask;
+	memcpy(&ipv4_addr.s_addr,ip,4);
+	memcpy(&ipv4_netmask.s_addr,netmask,4);
+	net_ifconfig(0,ipv4_addr,ipv4_netmask);
 //	print_info();
 /*
 	printf("%p\n",get_physaddr((void *)0xE00B8000));

@@ -2,6 +2,7 @@
 #define _ETHER_H
 
 #include <stdint.h>
+#include <stddef.h>
 #include <net.h>
 
 typedef struct __attribute__ ((packed)) {
@@ -14,5 +15,6 @@ typedef struct __attribute__ ((packed)) {
 
 void ether_process_frame(net_dev *dev, ether_frame *frame, uint16_t len);
 const char *eth_ntoa(const void *hw_addr);
+int ether_sendframe(net_dev *dev, void *frame, size_t len);
 
 #endif
