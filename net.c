@@ -51,8 +51,6 @@ void net_ifconfig(uint16_t dev_no, in_addr ipv4_addr, in_addr netmask) {
 	if (net_num_devs>dev_no) {
 		net_devs[dev_no].ipv4_addr.s_addr=ipv4_addr.s_addr;
 		net_devs[dev_no].ipv4_netmask.s_addr=netmask.s_addr;
-		printf("%s/",inet_ntoa(net_devs[dev_no].ipv4_addr));
-		printf("%s\n",inet_ntoa(net_devs[dev_no].ipv4_netmask));
 	}
 }
 

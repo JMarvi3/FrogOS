@@ -123,7 +123,6 @@ void pcnet32_irq_handler(struct regs *r, void *data) {
 	pcnet32_dev *dev=(pcnet32_dev *)netdev->priv;;
 	uint32_t csr0=dwio_read_csr(dev->ioaddr,0);
 	if((csr0&0x600)!=0) {
-		if(csr0&0x200) printf("csr0: %x\n",csr0);
 		dwio_write_csr(dev->ioaddr,0,csr0|(1<<9)|(1<<10));
 		netdev->needs_work=1;
 	} else {
@@ -135,15 +134,14 @@ int pcnet32_tx_packet(net_dev *netdev, uint8_t *packet, uint16_t len)
 {
 	pcnet32_dev *dev=(pcnet32_dev *)netdev->priv;
 	if(!pcnet32_driverowns(dev->tdes, dev->tx_buffer_ptr)) {
-		printf("tx buffer full!\n");
 		return 0;
 	}
 	memcpy((void *)(dev->tx_buffers+dev->tx_buffer_ptr*PCNET32_BUFFER_SIZE),packet, len);
+	net_free(packet);
 	dev->tdes[dev->tx_buffer_ptr*16+7] |= 0x3;
 	uint16_t bcnt = (uint16_t)(-len)&0xfff | 0xf000;
 	*(uint16_t *)(dev->tdes+dev->tx_buffer_ptr*16+4) = bcnt;
 	dev->tdes[dev->tx_buffer_ptr*16+7] |= 0x80;
-	printf("tdes: %p\n",dev->tdes+dev->tx_buffer_ptr*16);
 	if((++dev->tx_buffer_ptr)>=dev->tx_buffer_count)
 		dev->tx_buffer_ptr=0;
 	return 1;
@@ -226,7 +224,7 @@ void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 	for(i=0;i<dev->tx_buffer_count;++i) pcnet32_initialize_de(dev,i,1);
 	dev->card_reg.mode=0; // promiscuous: (1<<15);
 	dev->card_reg.rlen=PCNET32_LOG_RX_BUFF<<4;
-	dev->card_reg.tlen=PCNET32_LOG_RX_BUFF<<4;
+	dev->card_reg.tlen=PCNET32_LOG_TX_BUFF<<4;
 	memcpy(dev->card_reg.hw_addr,netdev->hw_addr,6);
 	dev->card_reg.reserved=0;
 	memset(dev->card_reg.ladr,0xff,8);

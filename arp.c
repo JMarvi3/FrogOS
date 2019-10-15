@@ -14,7 +14,7 @@ if(ntohs(packet->oper)==1 && packet->tpa.s_addr==dev->ipv4_addr.s_addr) {
 	ether_frame *frame=net_alloc();
 	if(frame) {
 		memcpy(frame->dest,src,6);
-		memcpy(frame->src,dest,6);
+		memcpy(frame->src,dev->hw_addr,6);
 		frame->type=htons(0x0806);
 		arp_packet *arp=(arp_packet *)frame->payload;
 		arp->htype=htons(1); arp->ptype=htons(0x0800);
