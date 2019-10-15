@@ -2,7 +2,7 @@
 #define _NET_H
 
 #include <stdint.h>
-#include <ipv4.h>
+#include <in.h>
 
 typedef struct net_dev {
 	uint16_t dev_no;

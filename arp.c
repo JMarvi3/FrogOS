@@ -8,8 +8,8 @@
 void arp_process_packet(net_dev *dev, uint8_t *src, uint8_t *dest, arp_packet *packet)
 {
 if(ntohs(packet->htype)!=1||ntohs(packet->ptype)!=0x0800||packet->hlen!=6||packet->plen!=4) return;
-printf(" .. %d %s %s -> ",ntohs(packet->oper),eth_ntoa(packet->sha),inet_ntoa(packet->spa));
-printf("%s %s\n",eth_ntoa(packet->tha),inet_ntoa(packet->tpa));
+//printf(" .. %d %s %s -> ",ntohs(packet->oper),eth_ntoa(packet->sha),inet_ntoa(packet->spa));
+//printf("%s %s\n",eth_ntoa(packet->tha),inet_ntoa(packet->tpa));
 if(ntohs(packet->oper)==1 && packet->tpa.s_addr==dev->ipv4_addr.s_addr) {
 	ether_frame *frame=net_alloc();
 	if(frame) {

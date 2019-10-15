@@ -3,8 +3,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <arp.h>
-
-void dump(void *,size_t);
+#include <ipv4.h>
 
 const char *eth_ntoa(const void *hw_addr)
 {
@@ -23,13 +22,13 @@ uint16_t type=ntohs(frame->type);
 if(type<1536) return;
 switch(type) {
 	case 0x0800: //IPv4
-		printf("IPv4: %d %s ",len,eth_ntoa(frame->src));
-		printf("-> %s\n",eth_ntoa(frame->dest));
-		dump(frame->payload,len-14-4);
+//		printf("IPv4: %d %s ",len,eth_ntoa(frame->src));
+//		printf("-> %s\n",eth_ntoa(frame->dest));
+		ipv4_process_packet(dev,frame,(ip_packet *)frame->payload,len-14-4);
 		break;
 	case 0x0806: //ARP
-		printf("ARP: %d %s ",len,eth_ntoa(frame->src));
-		printf("-> %s\n",eth_ntoa(frame->dest));
+//		printf("ARP: %d %s ",len,eth_ntoa(frame->src));
+//		printf("-> %s\n",eth_ntoa(frame->dest));
 		arp_process_packet(dev,frame->src,frame->dest,(arp_packet *)frame->payload);
 		break;
 	case 0x0842: //Wake-On-Lan
