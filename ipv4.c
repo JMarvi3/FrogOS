@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <ipv4.h>
+#include <icmp.h>
 
 const char *inet_ntoa(in_addr in_addr)
 {
@@ -32,10 +33,9 @@ void ipv4_process_packet(net_dev *dev, ether_frame *frame, ip_packet *packet, si
 if(packet->version!=4 || packet->ihl<5 || packet->ihl*4>len || ip_cksum(0,packet,4*packet->ihl)!=0) return;
 switch(packet->protocol) {
 	case 1: //ICMP
-		
+		icmp_process_packet(dev,frame,packet,(icmp_packet *)packet->payload,len-4*packet->ihl);
 		break;
 	default:
 		break;
 }
-dump(packet,len);
 }

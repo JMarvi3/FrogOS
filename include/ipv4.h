@@ -12,7 +12,8 @@ typedef struct __attribute__ ((packed)) {
 	uint8_t tos;
 	uint16_t tot_len, id, frag_off;
 	uint8_t ttl, protocol;
-	uint16_t check, src, dest;
+	uint16_t check;
+	uint32_t src, dest;
 	uint8_t payload[1];
 } ip_packet;
 
