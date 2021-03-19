@@ -36,8 +36,11 @@ uint8_t netmask[] = {255,255,255,0};
 
 void cmain()
 {
+unsigned long tsc1, tsc2;
 	disable();
 	cls();
+	__asm__ __volatile__ ("rdtsc"::"a"(tsc1),"d"(tsc2));
+	printf("%lu %lu %lu\n",tsc1,tsc2,*(unsigned long *)0x46c);
 	gdt_flush();
 	init_mem();
 	set_irqs();
@@ -82,7 +85,9 @@ void cmain()
 					int a=1/0;
 					break;
 				case 't':
-					printf("%lld\n",pit_counter);
+	__asm__ __volatile__ ("rdtsc"::"a"(tsc1),"d"(tsc2));
+	printf("%lu %lu %lu\n",tsc1,tsc2,*(unsigned long *)0x46c);
+					printf("%llu\n",pit_counter);
 					break;
 				case 's':
 					__asm__("pushl %ebx; \

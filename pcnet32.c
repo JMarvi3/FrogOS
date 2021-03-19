@@ -141,6 +141,7 @@ int pcnet32_tx_packet(net_dev *netdev, uint8_t *packet, uint16_t len)
 	dev->tdes[dev->tx_buffer_ptr*16+7] |= 0x3;
 	uint16_t bcnt = (uint16_t)(-len)&0xfff | 0xf000;
 	*(uint16_t *)(dev->tdes+dev->tx_buffer_ptr*16+4) = bcnt;
+	++netdev->tx_packets;
 	dev->tdes[dev->tx_buffer_ptr*16+7] |= 0x80;
 	if((++dev->tx_buffer_ptr)>=dev->tx_buffer_count)
 		dev->tx_buffer_ptr=0;
