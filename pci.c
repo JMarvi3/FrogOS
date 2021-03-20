@@ -137,6 +137,7 @@ void checkFunction(uint8_t bus, uint8_t device, uint8_t function)
 	if(vendorId==0x8086 && baseClass==2) 
 		printFunction(bus,device,function);
 	if(vendorId==0x1022 && (deviceId==0x2000||deviceId==0x2001)) {
+		printFunction(bus,device,function);
 	  uint8_t interrupt=pciConfigReadWord(bus,device,function,0x3C)&0xff;
 	  uint32_t ioaddr=pciConfigReadWord(bus,device,function,0x10)&0xFFFC;
 		probe_pcnet32(&pcidevs[numdevs],ioaddr,interrupt);
