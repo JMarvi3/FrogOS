@@ -232,24 +232,29 @@ void probe_pcnet32(pci_dev *pcidev, uint16_t ioaddr, uint8_t interrupt)
 	dev->card_reg.rde=(uint32_t)get_physaddr(dev->rdes);
 	dev->card_reg.tde=(uint32_t)get_physaddr(dev->tdes);
 
-	dev->handler.handler = pcnet32_irq_handler;
-	dev->handler.data=(void *)netdev;
-	dev->handler.next=0;
-	install_irq_handler(interrupt,&(dev->handler));
-	
 	uint32_t init_block=(uint32_t)get_physaddr(&dev->card_reg);
 	dwio_write_csr(ioaddr,1,init_block&0xffff);
 	dwio_write_csr(ioaddr,2,init_block>>16);
 	dwio_write_csr(ioaddr,4,0x915);
 
 	// Initialize the card
-	dwio_write_csr(ioaddr,0,dwio_read_csr(ioaddr,0)|1);
+//	dwio_write_csr(ioaddr,0,dwio_read_csr(ioaddr,0)|1);
+	dwio_write_csr(ioaddr,0,1);
 	while(dwio_read_csr(ioaddr,0)&0x100==0);
 
-	// Set start and enable interrupts
-	dwio_write_csr(ioaddr,0,dwio_read_csr(ioaddr,0)|(1<<1)|(1<<6)|(1<<8));
-	printf(" running");
+	dwio_write_csr(ioaddr,0,(1<<2));
+	dev->handler.handler = pcnet32_irq_handler;
+	dev->handler.data=(void *)netdev;
+	dev->handler.next=0;
+	install_irq_handler(interrupt,&(dev->handler));
         
+	// Set start and enable interrupts
+	dwio_write_csr(ioaddr,0,(1<<1)|(1<<6));
+	printf(" running");
+#ifdef DEBUG
+	printf("0x%x",dwio_read_csr(ioaddr,0));
+#endif
+
 	err:
 	printf(" done.\n");
 }
