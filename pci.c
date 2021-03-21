@@ -121,6 +121,11 @@ void printFunction(uint8_t bus, uint8_t device, uint8_t function)
 		bus,device,function,vendorId,deviceId,
 		subsystemVendorId,subsystemId,
 		(int)baseClass,(int)subClass,(int)progIf, interrupt);
+	for(int bar=0; bar<=5; ++bar) {
+		uint32_t bar_value = pciConfigReadDword(bus,device,function,0x10+bar*0x4);
+		if(bar_value)
+			printf("BAR%d: 0x%08x\n",bar,bar_value);
+	}
 }
 
 void checkFunction(uint8_t bus, uint8_t device, uint8_t function)
@@ -134,8 +139,9 @@ void checkFunction(uint8_t bus, uint8_t device, uint8_t function)
 	pcidevs[numdevs].bus=bus; pcidevs[numdevs].device=device;
 	pcidevs[numdevs].function=function; pcidevs[numdevs].vendorId=vendorId;
 	pcidevs[numdevs].deviceId=deviceId;
-	if(vendorId==0x8086 && baseClass==2) 
+	if(vendorId==0x8086 && baseClass==2) {
 		printFunction(bus,device,function);
+	}
 	if(vendorId==0x1022 && (deviceId==0x2000||deviceId==0x2001)) {
 		printFunction(bus,device,function);
 	  uint8_t interrupt=pciConfigReadWord(bus,device,function,0x3C)&0xff;
