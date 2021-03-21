@@ -1,4 +1,5 @@
-generic.grub:
-	grub-mkimage -O i386-pc-pxe -o generic.grub --prefix='(pxe)' tftp multiboot2 boot ls pxe pxechain help http configfile echo -c pre_grub.cfg
+generic.grub: pre_grub.cfg
+#	grub-mkimage -O i386-pc-pxe -o generic.grub --prefix='(pxe)' tftp multiboot2 boot ls pxe pxechain help http configfile echo -c pre_grub.cfg
+	grub-mkimage -O i386-pc-pxe -o generic.grub --prefix="(http,192.168.1.202:8000)" pxe pxechain cat multiboot2 boot ls help http configfile echo -c pre_grub.cfg
 clean:
 	rm -f generic.grub
