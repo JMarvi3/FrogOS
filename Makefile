@@ -12,4 +12,5 @@ boot/generic.grub:
 clean:
 	$(MAKE) -C lib clean
 	$(MAKE) -C boot clean
+	$(MAKE) -C loader clean
 	rm -f *.o kernel boot/kernel
