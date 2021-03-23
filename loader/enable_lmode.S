@@ -1,14 +1,9 @@
 
+	.code32
 	.section .text
 
 	.global p2, p3, p4, enable_longmode
 enable_longmode:
-
-	mov $24, %ecx
-	mov $gdt_copy, %esi
-	mov $gdt, %edi
-	rep movsb
-
 	movl $p3, %eax
 	orl $3, %eax
 	movl %eax, p4
@@ -29,44 +24,52 @@ create_p2:
 	jne create_p2
 
 
+	mov %cr0, %eax
+	btr $31, %eax	// PG = 0
+	mov %eax, %cr0
+
+
 	movl $p4, %eax	// Load PML4
 	mov %eax, %cr3
 
 
 	mov %cr4, %eax
-	or $1<<5, %eax	// Enable PAE
+	bts $5, %eax	// Enable PAR
 	mov %eax, %cr4
 
 
 efer:
 	movl $0xC0000080, %ecx
 	rdmsr
-//	xor %ecx, %ecx
-//	div %ecx
-	or $1<<8, %eax	// LME = 1
+	bts $8, %eax	// LME = 1
 	wrmsr
 
 
 	mov %cr0, %eax
-	or $1<<31, %eax  // PG = 1
+	bts $31, %eax  // PG = 1
 	mov %eax, %cr0
 
-	lgdt gdt_ptr
+	mov $(gdt64_copy_end-gdt64_copy), %ecx
+	mov $gdt64_copy, %esi
+	mov $gdt, %edi
+	rep movsb
+	lgdt gdt64_ptr
+	
 	ret
 
-gdt_ptr:
+gdt64_ptr:
 	.word 0x17
 	.4byte gdt, 0
 
-gdt_copy:
+gdt64_copy:
 	.quad 0
 	.quad 1<<43 | 1<<44 | 1<<47 | 1<<53	// CODE, PRESENT, LONGMODE
 	.quad 1<<44 | 1<<47 | 1<<53		// DATA, PRESENT, LONGMOE
+gdt64_copy_end:
 
 	.section .bss
 .align 0x1000
 p4:	.zero 0x1000
 p3:	.zero 0x1000
 p2:	.zero 0x1000
-gdt:	.zero 0x1000
 

@@ -1,3 +1,4 @@
+	.code32
 .macro INTERRUPT id
 #.globl irq\id
 irq\id: cli
@@ -23,7 +24,7 @@ install_irqs:
 loop:
 	movl (%esi, %ecx, 4), %ebx
 	movl %ebx, (%edi, %ecx, 8)
-	movl $0x0010, 2(%edi, %ecx, 8)
+	movl $0x0008, 2(%edi, %ecx, 8)
 	movl $0x8e00, 4(%edi, %ecx, 8)
 	movl 2(%esi, %ecx, 4), %ebx
 	movl %ebx, 6(%edi, %ecx, 8)
@@ -80,8 +81,9 @@ irq_stub:
 	addl $0x27, %eax
 good:
 	movl %eax, VIDEO+0x16
+stub_loop:
 	hlt
-	jmp irq_stub
+	jmp stub_loop
 
 irqs:	.4byte irq0, irq1, irq2, irq3, irq4, irq5, irq6, irq7, irq8, irq9
 	.4byte irq10, irq11, irq12, irq13, irq14, irq15, irq16, irq17, irq18, irq19

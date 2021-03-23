@@ -21,6 +21,7 @@ start:
 	movl $stack_top, %esp
 
 
+	call load_gdt
 	call install_irqs
 	call enable_longmode
 
@@ -66,15 +67,29 @@ cmd_line_loop:
 	pushl %ebx
 	call test
 */
-	movl $0x0f4f, VIDEO
-	movl $0x0f4b, VIDEO+2
+	ljmp $0x08,$long
 
+	.code64
+long:
+	mov $output, %esi
+	mov $VIDEO, %edi
+	mov $0x0f00, %eax
+loop1:
+	movb (%esi), %al
+	cmpb $0, %al
+	jz exit
+	mov %eax, (%edi)
+	inc %esi
+	add $2, %edi
+	jmp loop1
 exit:
 loop:
 	hlt
 	jmp loop
 
 
+output:
+	.asciz "FrogOS 64"
 	.globl mmap_len, mods_count, multiboot_info, mods_info, mmap_info
 	.globl cmd_line, test_var
 
