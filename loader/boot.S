@@ -2,9 +2,9 @@
 #include <multiboot.h>
 #define VIDEO 0xB8000
 
+
 	.section .text
 	.code32
-
 multiboot_header:
 	.long MULTIBOOT_HEADER_MAGIC
 	.long MULTIBOOT_MEMORY_INFO
@@ -18,14 +18,11 @@ start:
 
 	cmpl $MULTIBOOT_BOOTLOADER_MAGIC, %eax
 	jnz exit
-	movl $stack, %esp
+	movl $stack_top, %esp
 
-	movl $0x0f4f, VIDEO
-	movl $0x0f4b, VIDEO+2
 
 	call install_irqs
-	xor %ebx, %ebx
-	div %ebx
+	call enable_longmode
 
 /*
 	movl %ebx, %esi
@@ -69,8 +66,9 @@ cmd_line_loop:
 	pushl %ebx
 	call test
 */
+	movl $0x0f4f, VIDEO
+	movl $0x0f4b, VIDEO+2
 
-	sgdt gdt
 exit:
 loop:
 	hlt
@@ -79,10 +77,9 @@ loop:
 
 	.globl mmap_len, mods_count, multiboot_info, mods_info, mmap_info
 	.globl cmd_line, test_var
-	.bss
+
+	.section .bss
 	.align 0x1000
-gdt:
-	.zero 0x100
 mmap_len:
 	.word 0
 mods_count:
@@ -100,4 +97,6 @@ cmd_line:
 	.zero 0x100
 stack:
 	.zero 0x1000
+stack_top:
+	.word 0
 

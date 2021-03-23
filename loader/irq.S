@@ -68,9 +68,9 @@ INTERRUPT 31
 
 #define VIDEO 0xB8000
 irq_stub:
-	movl $0x0f4e, VIDEO
-	movl $0x0f6f, VIDEO+2
-	movl $0x0f2d, VIDEO+4
+	movl $0x0f4e, VIDEO+0x10
+	movl $0x0f6f, VIDEO+0x12
+	movl $0x0f2d, VIDEO+0x14
 	pop %esi
 	pop %edi
 	movl $0x0f30, %eax
@@ -79,7 +79,7 @@ irq_stub:
 	jle good
 	addl $0x27, %eax
 good:
-	movl %eax, VIDEO+6
+	movl %eax, VIDEO+0x16
 	hlt
 	jmp irq_stub
 
@@ -89,8 +89,8 @@ irqs:	.4byte irq0, irq1, irq2, irq3, irq4, irq5, irq6, irq7, irq8, irq9
 	.4byte irq30, irq31
 
 	.globl idt, idt_ptr
-	.align 0x100
-idt:	.zero 2048
 idt_ptr: .short 2047
 	.long idt
+	.section .bss
+idt:	.zero 2048
 
