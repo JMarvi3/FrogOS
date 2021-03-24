@@ -1,9 +1,14 @@
-#CC=i686-linux-gnu-gcc
-CFLAGS=-static -I../include -nostdlib
+CPPFLAGS=-I../include
+objects=boot.o irq.o enable_lmode.o gdt.o
+.SILENT: clean $(objects) loader
 
-loader: boot.S ld.script irq.S enable_lmode.S gdt.S
-	$(CC) $(CFLAGS) -m32 -T ld.script -o loader boot.S irq.S enable_lmode.S gdt.S -fno-pic -O3
+loader: boot.o irq.o enable_lmode.o gdt.o
+	$(LD) --build-id=none -n -z max-page-size=4096 $^ -o $@
+	readelf -s loader >symbols
+	strip loader
 	cp loader ../boot
 
+rebuild: clean loader
+
 clean:
-	rm -f loader
+	rm -f loader *.o symbols

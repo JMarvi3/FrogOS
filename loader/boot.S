@@ -5,6 +5,7 @@
 
 	.section .text
 	.code32
+
 multiboot_header:
 	.long MULTIBOOT_HEADER_MAGIC
 	.long MULTIBOOT_MEMORY_INFO
@@ -12,8 +13,8 @@ multiboot_header:
 	.long 0,0,0,0,0
 	.long 0,0,0,0
 
-
-	.global start
+	.global start, _start
+_start:
 start:
 
 	cmpl $MULTIBOOT_BOOTLOADER_MAGIC, %eax
@@ -89,7 +90,7 @@ loop:
 
 
 output:
-	.asciz "FrogOS 64"
+	.asciz "FrogOS 64bit Loader"
 	.globl mmap_len, mods_count, multiboot_info, mods_info, mmap_info
 	.globl cmd_line, test_var
 

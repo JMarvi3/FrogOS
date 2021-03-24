@@ -107,6 +107,8 @@ unsigned long tsc1, tsc2;
 				case 'p':
 					print_info();
 					break;
+				case 'c':
+					asm("cli");
 				default:
 					if (!(c&0x80)) putch(c&0xff);
 					break;
