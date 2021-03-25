@@ -36,7 +36,7 @@ uint8_t netmask[] = {255,255,255,0};
 
 void cmain()
 {
-unsigned long tsc1, tsc2;
+    unsigned long tsc1=0, tsc2=0;
 	disable();
 	cls();
 	__asm__ __volatile__ ("rdtsc"::"a"(tsc1),"d"(tsc2));
@@ -82,7 +82,7 @@ unsigned long tsc1, tsc2;
 					break;
 				case 'z':
 					puts("Divide by zero:");
-					int a=1/0;
+					int a = 1/0;
 					break;
 				case 't':
 	__asm__ __volatile__ ("rdtsc"::"a"(tsc1),"d"(tsc2));
@@ -108,7 +108,8 @@ unsigned long tsc1, tsc2;
 					print_info();
 					break;
 				case 'c':
-					asm("cli");
+					__asm__("cli");
+                    break;
 				default:
 					if (!(c&0x80)) putch(c&0xff);
 					break;

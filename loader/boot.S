@@ -5,21 +5,22 @@
 
 	.section .text
 	.code32
-
+#define MULTIBOOT_FLAGS MULTIBOOT_MEMORY_INFO + MULTIBOOT_VIDEO_MODE
 multiboot_header:
 	.long MULTIBOOT_HEADER_MAGIC
-	.long MULTIBOOT_MEMORY_INFO
-	.long -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_MEMORY_INFO)
+	.long MULTIBOOT_FLAGS
+	.long -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_FLAGS)
 	.long 0,0,0,0,0
-	.long 0,0,0,0
+//	.long 0,1024,768,32
+	.long 0,640,480,16
 
-	.global start, _start
+	.global _start
 _start:
-start:
 
 	cmpl $MULTIBOOT_BOOTLOADER_MAGIC, %eax
 	jnz exit
-	movl $stack_top, %esp
+	mov $stack_top, %esp
+	mov %ebx, multiboot_info
 
 
 	call load_gdt
@@ -68,29 +69,99 @@ cmd_line_loop:
 	pushl %ebx
 	call test
 */
+pre_long:
 	ljmp $0x08,$long
 
 	.code64
 long:
+/*
 	mov $output, %esi
 	mov $VIDEO, %edi
 	mov $0x0f00, %eax
 loop1:
 	movb (%esi), %al
 	cmpb $0, %al
-	jz exit
+	jz done_output
 	mov %eax, (%edi)
 	inc %esi
 	add $2, %edi
 	jmp loop1
+done_output:
+*/
+
+	call serial_init
+	test %eax, %eax
+	jne no_serial
+
+	rdtsc
+	call out_word
+
+	mov multiboot_info, %eax
+	mov (%eax), %eax
+	call out_word
+
+	xor %ecx, %ecx
+	mov multiboot_info, %edi
+loop3:
+	mov 88(%edi, %ecx, 4), %eax
+	call out_word
+	inc %ecx
+	cmp $6, %ecx
+	jnz loop3
+
+no_serial:
+/*
+	call init_ssfn
+	mov $output, %rdi
+	call puts_ssfn
+*/
+
+draw:
+	mov $multiboot_info, %rax
+	mov (%rax), %rax
+	mov 88(%rax), %rdi
+	xor %rcx, %rcx
+	mov 96(%rax), %ecx
+	xor %rbx, %rbx
+	mov 104(%rax), %ebx
+	imul %rbx, %rcx
+	mov $0x50000, %rcx
+	mov 0x0f, %al
+	rep stosb
+	mov $0x05, %edx
+
+
 exit:
 loop:
-	hlt
+//	hlt
 	jmp loop
 
+out_word:
+	mov $0x3f8, %dx
+	push %rax
+	mov $0x04, %al
+	out %al, (%dx)
+	pop %rax
+	out %al, (%dx)
+	shr $8, %eax
+	out %al, (%dx)
+	shr $8, %eax
+	out %al, (%dx)
+	shr $8, %eax
+	out %al, (%dx)
+	ret
+
+	
 
 output:
 	.asciz "FrogOS 64bit Loader"
+
+
+framebuffer:
+	.quad 0
+framebuffer_pitch:
+	.quad 0	
+
 	.globl mmap_len, mods_count, multiboot_info, mods_info, mmap_info
 	.globl cmd_line, test_var
 
@@ -104,6 +175,9 @@ test_var:
 	.word 0
 	.align 0x100
 multiboot_info:
+	.quad 0
+magic:
+	.quad 0
 	.zero 0x100
 mods_info:
 	.zero 0x100

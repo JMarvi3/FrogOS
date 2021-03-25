@@ -158,7 +158,7 @@ void checkFunction(uint8_t bus, uint8_t device, uint8_t function)
 
 void checkAllBuses(void)
 {
-	uint8_t function, bus;
+	uint8_t function;
 	if((getHeaderType(0,0,0)&0x80)==0) {
 		checkBus(0);
 	} else {

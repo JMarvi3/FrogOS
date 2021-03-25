@@ -71,5 +71,5 @@ gdt64_copy_end:
 .align 0x1000
 p4:	.zero 0x1000
 p3:	.zero 0x1000
-p2:	.zero 0x1000
+p2:	.zero 16*0x1000
 
