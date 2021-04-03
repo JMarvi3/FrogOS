@@ -5,8 +5,9 @@ objects=boot.o irq.o enable_lmode.o gdt.o
 loader: boot.o irq.o enable_lmode.o gdt.o
 	$(LD) --build-id=none -n -z max-page-size=4096 $^ -o $@
 	readelf -s loader >symbols
-	strip loader
+#	strip loader
 	cp loader ../boot
+	strip ../boot/loader
 
 rebuild: clean loader
 

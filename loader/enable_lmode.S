@@ -1,3 +1,4 @@
+.set GB, 16
 
 	.code32
 	.section .text
@@ -8,19 +9,27 @@ enable_longmode:
 	orl $3, %eax
 	movl %eax, p4
 
-	movl $p2, %eax
+	mov $0x1000, %ebx
+	mov $p2, %eax
 	orl $3, %eax
-	movl %eax, p3
+	mov $p3, %edi
+	xor %ecx, %ecx
+	mov $GB, %ecx
+p3_loop:
+	mov %eax, (%edi, %ecx, 8)
+	add %ebx, %eax
+	inc %eax
+	cmp $GB, %ecx
+	jnz p3_loop
 
 	movl $p2, %edi
-	xor %ecx, %ecx
+	mov $0x83, %eax
+	mov $1<<21, %ebx // 2MB
 create_p2:
-	movl $0x200000, %eax // 2MB
-	mul %ecx
-	or $0x83, %eax	// 0x80 = Huge page
 	movl %eax, (%edi, %ecx, 8) // %edi + 8 * %ecx
+	add %ebx, %ecx
 	inc %ecx
-	cmpl $512, %ecx
+	cmpl $512*GB, %ecx
 	jne create_p2
 
 
@@ -70,6 +79,6 @@ gdt64_copy_end:
 	.section .bss
 .align 0x1000
 p4:	.zero 0x1000
-p3:	.zero 0x1000
+p3:	.zero GB*0x1000
 p2:	.zero 0x1000
 
