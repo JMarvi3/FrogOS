@@ -1,4 +1,5 @@
-.set GB, 16
+#.set GB, 16
+GB = 16
 
 	.code32
 	.section .text
@@ -9,28 +10,30 @@ enable_longmode:
 	orl $3, %eax
 	movl %eax, p4
 
+create_p3:
 	mov $0x1000, %ebx
 	mov $p2, %eax
 	orl $3, %eax
 	mov $p3, %edi
 	xor %ecx, %ecx
-	mov $GB, %ecx
 p3_loop:
 	mov %eax, (%edi, %ecx, 8)
 	add %ebx, %eax
-	inc %eax
+	inc %ecx
 	cmp $GB, %ecx
 	jnz p3_loop
 
+create_p2:
 	movl $p2, %edi
 	mov $0x83, %eax
 	mov $1<<21, %ebx // 2MB
-create_p2:
+	xor %ecx, %ecx
+p2_loop:
 	movl %eax, (%edi, %ecx, 8) // %edi + 8 * %ecx
-	add %ebx, %ecx
+	add %ebx, %eax
 	inc %ecx
 	cmpl $512*GB, %ecx
-	jne create_p2
+	jne p2_loop
 
 
 	mov %cr0, %eax

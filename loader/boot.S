@@ -6,12 +6,13 @@
 	.section .text
 	.code32
 
+MULTIBOOT_FLAGS = MULTIBOOT_MEMORY_INFO + MULTIBOOT_VIDEO_MODE
 multiboot_header:
 	.long MULTIBOOT_HEADER_MAGIC
-	.long MULTIBOOT_MEMORY_INFO
-	.long -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_MEMORY_INFO)
+	.long MULITBOOT_FLAGS
+	.long -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_FLAGS)
 	.long 0,0,0,0,0
-	.long 0,0,0,0
+	.long 0,800,600,24
 
 	.global start, _start
 _start:
@@ -20,11 +21,11 @@ start:
 	cmpl $MULTIBOOT_BOOTLOADER_MAGIC, %eax
 	jnz exit
 	movl $stack_top, %esp
+	movl %ebx, multiboot_info
 
 
 	call load_gdt
 	call install_irqs
-	call enable_longmode
 
 /*
 	movl %ebx, %esi
@@ -68,10 +69,34 @@ cmd_line_loop:
 	pushl %ebx
 	call test
 */
+	call enable_longmode
 	ljmp $0x08,$long
 
 	.code64
+
 long:
+
+
+draw:
+	mov $multiboot_info, %rax
+	mov (%rax), %rax
+	mov 88(%rax), %rdi
+	xor %rcx, %rcx
+	mov 96(%rax), %ecx // pitch
+	xor %rbx, %rbx
+	mov 104(%rax), %ebx // height
+	imul %rbx, %rcx
+	shr $1, %rcx
+	mov $1, %ax
+draw_loop:
+	mov %ax, (%rdi)
+	ror $1, %ax
+	add $2, %rdi
+	sub $1, %ecx
+	jnz draw_loop
+	
+	jmp exit
+	
 	mov $output, %esi
 	mov $VIDEO, %edi
 	mov $0x0f00, %eax
