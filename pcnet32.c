@@ -78,7 +78,7 @@ uint32_t dwio_read_bcr(uint16_t ioaddr, uint16_t index)
 }
 
 
-unsigned long long pit_counter;
+extern unsigned long long pit_counter;
 void pcnet32_reset(uint16_t ioaddr)
 {
 	inportw(ioaddr+PCNET32_DWIO_RESET);
